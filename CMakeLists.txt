@@ -51,6 +51,8 @@ target_sources(VSTRunner PRIVATE
     # Web interface
     Source/Web/WebServer.cpp
     Source/Web/WebServer.h
+    Source/Web/WebAPIHandler.cpp
+    Source/Web/WebAPIHandler.h
 )
 
 # Link JUCE modules
