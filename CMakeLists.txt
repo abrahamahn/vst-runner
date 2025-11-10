@@ -23,13 +23,28 @@ juce_add_gui_app(VSTRunner
 
 # Add source files
 target_sources(VSTRunner PRIVATE
+    # Application entry point
     Source/Main.cpp
+
+    # Core business logic
+    Source/Core/ConfigurationManager.cpp
+    Source/Core/ConfigurationManager.h
+    Source/Core/PluginManager.cpp
+    Source/Core/PluginManager.h
+    Source/Core/AudioIOManager.cpp
+    Source/Core/AudioIOManager.h
+
+    # UI components
     Source/MainComponent.cpp
     Source/MainComponent.h
-    Source/PluginHostProcessor.cpp
-    Source/PluginHostProcessor.h
     Source/AudioSettingsComponent.cpp
     Source/AudioSettingsComponent.h
+
+    # Audio processing
+    Source/PluginHostProcessor.cpp
+    Source/PluginHostProcessor.h
+
+    # Web interface
     Source/WebServer.cpp
     Source/WebServer.h
 )
@@ -93,6 +108,10 @@ target_compile_definitions(VSTRunner
 target_include_directories(VSTRunner
     PRIVATE
         Source
+        Source/Core
+        Source/UI
+        Source/Web
+        Source/Utils
 )
 
 # Copy any resources if needed
