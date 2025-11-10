@@ -27,6 +27,31 @@ We are committed to providing a welcoming and inclusive environment. Please be r
 
 ### Setting Up Development Environment
 
+#### Quick Setup (Recommended)
+
+**One-command setup:**
+
+```bash
+# Linux/macOS
+./setup.sh
+
+# Windows (PowerShell)
+.\setup.ps1
+```
+
+This automated script will:
+- ✅ Check prerequisites (CMake, Git, compiler)
+- ✅ Install system dependencies (Linux only)
+- ✅ Initialize Git submodules
+- ✅ Set up pre-commit hooks
+- ✅ Configure build with CMake
+- ✅ Build the project
+- ✅ Run tests
+
+#### Manual Setup
+
+If you prefer manual setup or the script fails:
+
 1. **Fork the repository**
    ```bash
    # Fork on GitHub, then clone your fork
@@ -57,6 +82,20 @@ We are committed to providing a welcoming and inclusive environment. Please be r
    ```bash
    ./VSTRunnerTests_artefacts/Debug/VSTRunnerTests
    ```
+
+#### Using Makefile (Linux/macOS)
+
+After setup, use `make` for common tasks:
+
+```bash
+make help           # Show all available targets
+make build          # Build project
+make test           # Run tests
+make benchmark      # Run performance benchmarks
+make format         # Format code with clang-format
+make ci             # Run all CI checks
+make clean          # Clean build directory
+```
 
 ## Development Workflow
 

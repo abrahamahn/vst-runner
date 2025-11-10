@@ -1,0 +1,68 @@
+#!/bin/bash
+# Pre-commit hook for VST Runner
+# Runs code formatting checks before committing
+
+set -e
+
+echo "Running pre-commit checks..."
+
+# Check if clang-format is available
+if ! command -v clang-format &> /dev/null; then
+    echo "⚠️  clang-format not found, skipping format check"
+    echo "   Install clang-format to enable automatic formatting checks"
+    exit 0
+fi
+
+# Get list of staged C++ files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(cpp|h)$' || true)
+
+if [ -z "$STAGED_FILES" ]; then
+    echo "✅ No C++ files to check"
+    exit 0
+fi
+
+echo "Checking code formatting..."
+
+# Check formatting
+FORMAT_ISSUES=false
+for file in $STAGED_FILES; do
+    if [ -f "$file" ]; then
+        # Check if file needs formatting
+        if ! clang-format --dry-run --Werror "$file" 2>/dev/null; then
+            echo "❌ Format issues in: $file"
+            FORMAT_ISSUES=true
+        fi
+    fi
+done
+
+if [ "$FORMAT_ISSUES" = true ]; then
+    echo ""
+    echo "❌ Code formatting check failed!"
+    echo ""
+    echo "To fix formatting issues, run:"
+    echo "  make format"
+    echo "  or: clang-format -i Source/**/*.{h,cpp}"
+    echo ""
+    echo "Then stage the changes and commit again."
+    echo ""
+    echo "To skip this check (not recommended), use:"
+    echo "  git commit --no-verify"
+    echo ""
+    exit 1
+fi
+
+echo "✅ Code formatting check passed"
+
+# Optional: Run quick tests
+# Uncomment to enable test running on commit
+#
+# echo "Running quick tests..."
+# if make test-core &> /dev/null; then
+#     echo "✅ Tests passed"
+# else
+#     echo "❌ Tests failed"
+#     echo "Fix tests before committing or use --no-verify to skip"
+#     exit 1
+# fi
+
+exit 0

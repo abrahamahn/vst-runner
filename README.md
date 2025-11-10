@@ -49,6 +49,18 @@ For detailed build instructions, see [docs/manual/BUILD.md](docs/manual/BUILD.md
 
 ### Quick Start
 
+**One-command setup** (recommended for contributors):
+
+```bash
+# Linux/macOS
+./setup.sh
+
+# Windows (PowerShell)
+.\setup.ps1
+```
+
+**Manual build:**
+
 ```bash
 # Clone the repository
 git clone <repository-url>
@@ -67,6 +79,15 @@ cmake --build . --config Release
 
 # On Windows, the executable will be in build/VSTRunner_artefacts/Release/
 # On macOS, the app bundle will be in build/VSTRunner_artefacts/Release/
+```
+
+**Using Makefile** (Linux/macOS):
+
+```bash
+make setup    # Initial setup
+make build    # Build project
+make test     # Run tests
+make help     # Show all commands
 ```
 
 ### Prerequisites
