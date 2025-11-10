@@ -43,6 +43,12 @@ target_sources(VSTRunner PRIVATE
     Source/UI/MainComponent.h
     Source/UI/AudioSettingsComponent.cpp
     Source/UI/AudioSettingsComponent.h
+    Source/UI/PluginControlPanel.cpp
+    Source/UI/PluginControlPanel.h
+    Source/UI/AudioControlPanel.cpp
+    Source/UI/AudioControlPanel.h
+    Source/UI/WebServerPanel.cpp
+    Source/UI/WebServerPanel.h
 
     # Audio processing
     Source/PluginHostProcessor.cpp

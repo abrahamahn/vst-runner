@@ -1,11 +1,15 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "PluginHostProcessor.h"
+#include "WebAPIHandler.h"
 
 /**
-    Simple HTTP/WebSocket server for web interface.
-    Provides REST API and WebSocket endpoints for controlling VST Runner from a browser.
+    HTTP server for web interface.
+    Handles HTTP protocol and delegates API logic to WebAPIHandler.
+
+    Refactored in Phase 3 to separate concerns:
+    - WebServer: HTTP protocol, resource serving
+    - WebAPIHandler: API business logic
 */
 class WebServer : private juce::Thread
 {
@@ -31,29 +35,15 @@ public:
 private:
     void run() override;
 
-    // HTTP request handlers
-    juce::String handleGetStatus();
-    juce::String handleGetPluginInfo();
-    juce::String handleLoadPlugin (const juce::String& pluginPath);
-    juce::String handleUnloadPlugin();
-    juce::String handleGetAudioSettings();
-    juce::String handleSetInputGain (float gain);
-    juce::String handleSetOutputGain (float gain);
-    juce::String handleSetAudioInput (bool enabled);
-    juce::String handleSetMidiInput (bool enabled);
-    juce::String handleScanPlugins (const juce::String& directory);
-
-    // Helper methods
-    juce::String jsonResponse (const juce::var& data);
-    juce::String errorResponse (const juce::String& message);
+    // Resource serving
     juce::String serveFile (const juce::String& filename);
     juce::String createHTMLResponse (const juce::String& content, int statusCode = 200);
     juce::String getIndexHTML();
     juce::String getAppJS();
     void loadWebResources();
 
-    PluginHostProcessor* pluginProcessor;
-    juce::AudioDeviceManager* audioDeviceManager;
+    // API handler (delegates all business logic)
+    std::unique_ptr<WebAPIHandler> apiHandler;
 
     std::atomic<bool> serverRunning { false };
     int serverPort = 8080;
