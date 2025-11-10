@@ -12,7 +12,8 @@
  *   VSTRunnerTests --test WebAPIHandler  // Run specific test
  */
 
-#include <JuceHeader.h>
+#include <juce_core/juce_core.h>
+#include <juce_events/juce_events.h>
 
 // Include all test files
 #include "Web/WebAPIHandlerTests.cpp"

@@ -1,6 +1,8 @@
 #pragma once
 
-#include <JuceHeader.h>
+#include <juce_core/juce_core.h>
+#include <juce_events/juce_events.h>
+#include <juce_audio_processors/juce_audio_processors.h>
 
 /**
     Centralized manager for all plugin-related operations.
