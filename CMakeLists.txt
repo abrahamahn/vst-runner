@@ -39,18 +39,18 @@ target_sources(VSTRunner PRIVATE
     Source/Core/AudioIOManager.h
 
     # UI components
-    Source/MainComponent.cpp
-    Source/MainComponent.h
-    Source/AudioSettingsComponent.cpp
-    Source/AudioSettingsComponent.h
+    Source/UI/MainComponent.cpp
+    Source/UI/MainComponent.h
+    Source/UI/AudioSettingsComponent.cpp
+    Source/UI/AudioSettingsComponent.h
 
     # Audio processing
     Source/PluginHostProcessor.cpp
     Source/PluginHostProcessor.h
 
     # Web interface
-    Source/WebServer.cpp
-    Source/WebServer.h
+    Source/Web/WebServer.cpp
+    Source/Web/WebServer.h
 )
 
 # Link JUCE modules

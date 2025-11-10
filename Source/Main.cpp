@@ -1,5 +1,5 @@
 #include <JuceHeader.h>
-#include "MainComponent.h"
+#include "UI/MainComponent.h"
 
 //==============================================================================
 class VSTRunnerApplication : public juce::JUCEApplication

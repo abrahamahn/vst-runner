@@ -1,9 +1,9 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "PluginHostProcessor.h"
+#include "../PluginHostProcessor.h"
 #include "AudioSettingsComponent.h"
-#include "WebServer.h"
+#include "../Web/WebServer.h"
 
 //==============================================================================
 /**
