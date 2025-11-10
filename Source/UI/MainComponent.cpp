@@ -19,92 +19,39 @@ MainComponent::MainComponent()
     titleLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (titleLabel);
 
-    // Setup plugin path components
-    pluginPathLabel.setText ("Plugin Path:", juce::dontSendNotification);
-    addAndMakeVisible (pluginPathLabel);
+    // Create plugin control panel
+    pluginPanel = std::make_unique<PluginControlPanel>();
+    pluginPanel->onBrowseForPlugin = [this] { browseForPlugin(); };
+    pluginPanel->onLoadPlugin = [this] (const juce::String& path) { loadPluginFromPath (path); };
+    pluginPanel->onShowPluginEditor = [this] { showPluginEditor(); };
+    addAndMakeVisible (pluginPanel.get());
 
-    pluginPathEditor.setMultiLine (false);
-    pluginPathEditor.setReturnKeyStartsNewLine (false);
-    pluginPathEditor.setReadOnly (false);
-    pluginPathEditor.setScrollbarsShown (true);
-    pluginPathEditor.setCaretVisible (true);
-    pluginPathEditor.setPopupMenuEnabled (true);
-    pluginPathEditor.setTextToShowWhenEmpty ("Enter plugin path or click Browse...", juce::Colours::grey);
-    addAndMakeVisible (pluginPathEditor);
-
-    browseButton.setButtonText ("Browse...");
-    browseButton.onClick = [this] { browseForPlugin(); };
-    addAndMakeVisible (browseButton);
-
-    loadButton.setButtonText ("Load Plugin");
-    loadButton.onClick = [this] { loadPluginFromPath (pluginPathEditor.getText()); };
-    addAndMakeVisible (loadButton);
-
-    // Setup status label
-    statusLabel.setText ("No plugin loaded", juce::dontSendNotification);
-    statusLabel.setJustificationType (juce::Justification::centred);
-    statusLabel.setColour (juce::Label::textColourId, juce::Colours::orange);
-    addAndMakeVisible (statusLabel);
-
-    // Setup audio settings button
-    audioSettingsButton.setButtonText ("Audio Settings");
-    audioSettingsButton.onClick = [this] { openAudioSettings(); };
-    addAndMakeVisible (audioSettingsButton);
-
-    // Setup show editor button
-    showEditorButton.setButtonText ("Show Plugin Editor");
-    showEditorButton.onClick = [this] { showPluginEditor(); };
-    showEditorButton.setEnabled (false);
-    addAndMakeVisible (showEditorButton);
-
-    // Setup input gain control
-    inputGainLabel.setText ("Input Gain", juce::dontSendNotification);
-    inputGainLabel.setJustificationType (juce::Justification::centredRight);
-    addAndMakeVisible (inputGainLabel);
-
-    inputGainSlider.setRange (0.0, 2.0, 0.01);
-    inputGainSlider.setValue (1.0);
-    inputGainSlider.setSliderStyle (juce::Slider::LinearHorizontal);
-    inputGainSlider.setTextBoxStyle (juce::Slider::TextBoxRight, false, 60, 20);
-    inputGainSlider.setTextValueSuffix (" x");
-    inputGainSlider.onValueChange = [this] {
+    // Create audio control panel
+    audioPanel = std::make_unique<AudioControlPanel>();
+    audioPanel->onOpenAudioSettings = [this] { openAudioSettings(); };
+    audioPanel->onInputGainChanged = [this] (float gain) {
         if (pluginProcessor != nullptr)
-            pluginProcessor->setInputGain (static_cast<float> (inputGainSlider.getValue()));
+            pluginProcessor->setInputGain (gain);
     };
-    addAndMakeVisible (inputGainSlider);
-
-    // Setup output gain control
-    outputGainLabel.setText ("Output Gain", juce::dontSendNotification);
-    outputGainLabel.setJustificationType (juce::Justification::centredRight);
-    addAndMakeVisible (outputGainLabel);
-
-    outputGainSlider.setRange (0.0, 2.0, 0.01);
-    outputGainSlider.setValue (1.0);
-    outputGainSlider.setSliderStyle (juce::Slider::LinearHorizontal);
-    outputGainSlider.setTextBoxStyle (juce::Slider::TextBoxRight, false, 60, 20);
-    outputGainSlider.setTextValueSuffix (" x");
-    outputGainSlider.onValueChange = [this] {
+    audioPanel->onOutputGainChanged = [this] (float gain) {
         if (pluginProcessor != nullptr)
-            pluginProcessor->setOutputGain (static_cast<float> (outputGainSlider.getValue()));
+            pluginProcessor->setOutputGain (gain);
     };
-    addAndMakeVisible (outputGainSlider);
-
-    // Setup audio/MIDI input toggles
-    audioInputToggle.setButtonText ("Audio Input Enabled");
-    audioInputToggle.setToggleState (true, juce::dontSendNotification);
-    audioInputToggle.onClick = [this] {
+    audioPanel->onAudioInputToggled = [this] (bool enabled) {
         if (pluginProcessor != nullptr)
-            pluginProcessor->setAudioInputEnabled (audioInputToggle.getToggleState());
+            pluginProcessor->setAudioInputEnabled (enabled);
     };
-    addAndMakeVisible (audioInputToggle);
-
-    midiInputToggle.setButtonText ("MIDI Input Enabled");
-    midiInputToggle.setToggleState (true, juce::dontSendNotification);
-    midiInputToggle.onClick = [this] {
+    audioPanel->onMidiInputToggled = [this] (bool enabled) {
         if (pluginProcessor != nullptr)
-            pluginProcessor->setMidiInputEnabled (midiInputToggle.getToggleState());
+            pluginProcessor->setMidiInputEnabled (enabled);
     };
-    addAndMakeVisible (midiInputToggle);
+    addAndMakeVisible (audioPanel.get());
+
+    // Create web server panel
+    webServerPanel = std::make_unique<WebServerPanel>();
+    webServerPanel->onToggleWebServer = [this] { toggleWebServer(); };
+    webServerPanel->onOpenWebUI = [this] { openWebInterface(); };
+    addAndMakeVisible (webServerPanel.get());
 
     // Setup info label
     infoLabel.setText ("Load a VST2 (.dll/.vst) or VST3 (.vst3) plugin to begin", juce::dontSendNotification);
@@ -112,22 +59,6 @@ MainComponent::MainComponent()
     infoLabel.setFont (juce::Font (12.0f, juce::Font::italic));
     infoLabel.setColour (juce::Label::textColourId, juce::Colours::grey);
     addAndMakeVisible (infoLabel);
-
-    // Setup web server components
-    webServerButton.setButtonText ("Start Web Server");
-    webServerButton.onClick = [this] { toggleWebServer(); };
-    addAndMakeVisible (webServerButton);
-
-    openWebButton.setButtonText ("Open Web UI");
-    openWebButton.onClick = [this] { openWebInterface(); };
-    openWebButton.setEnabled (false);
-    addAndMakeVisible (openWebButton);
-
-    webServerLabel.setText ("Web server: Stopped", juce::dontSendNotification);
-    webServerLabel.setJustificationType (juce::Justification::centred);
-    webServerLabel.setFont (juce::Font (11.0f));
-    webServerLabel.setColour (juce::Label::textColourId, juce::Colours::grey);
-    addAndMakeVisible (webServerLabel);
 
     // Create web server instance
     webServer = std::make_unique<WebServer> (pluginProcessor.get(), &deviceManager);
@@ -176,60 +107,16 @@ void MainComponent::resized()
     titleLabel.setBounds (area.removeFromTop (40));
     area.removeFromTop (10);
 
-    // Plugin path area
-    auto pathArea = area.removeFromTop (30);
-    pluginPathLabel.setBounds (pathArea.removeFromLeft (100));
-    pathArea.removeFromLeft (5);
-    browseButton.setBounds (pathArea.removeFromRight (100));
-    pathArea.removeFromRight (5);
-    loadButton.setBounds (pathArea.removeFromRight (100));
-    pathArea.removeFromRight (5);
-    pluginPathEditor.setBounds (pathArea);
-
-    area.removeFromTop (15);
-
-    // Status
-    statusLabel.setBounds (area.removeFromTop (30));
+    // Plugin control panel
+    pluginPanel->setBounds (area.removeFromTop (200));
     area.removeFromTop (10);
 
-    // Buttons
-    auto buttonArea = area.removeFromTop (40);
-    audioSettingsButton.setBounds (buttonArea.removeFromLeft (150));
-    buttonArea.removeFromLeft (10);
-    showEditorButton.setBounds (buttonArea.removeFromLeft (180));
-
-    area.removeFromTop (20);
-
-    // Input gain
-    auto inputGainArea = area.removeFromTop (30);
-    inputGainLabel.setBounds (inputGainArea.removeFromLeft (100));
-    inputGainSlider.setBounds (inputGainArea);
-
+    // Audio control panel
+    audioPanel->setBounds (area.removeFromTop (180));
     area.removeFromTop (10);
 
-    // Output gain
-    auto outputGainArea = area.removeFromTop (30);
-    outputGainLabel.setBounds (outputGainArea.removeFromLeft (100));
-    outputGainSlider.setBounds (outputGainArea);
-
-    area.removeFromTop (20);
-
-    // Toggles
-    audioInputToggle.setBounds (area.removeFromTop (30));
-    area.removeFromTop (5);
-    midiInputToggle.setBounds (area.removeFromTop (30));
-
-    area.removeFromTop (20);
-
-    // Web server controls
-    auto webButtonArea = area.removeFromTop (40);
-    webServerButton.setBounds (webButtonArea.removeFromLeft (150));
-    webButtonArea.removeFromLeft (10);
-    openWebButton.setBounds (webButtonArea.removeFromLeft (150));
-
-    area.removeFromTop (5);
-    webServerLabel.setBounds (area.removeFromTop (25));
-
+    // Web server panel
+    webServerPanel->setBounds (area.removeFromTop (120));
     area.removeFromTop (15);
 
     // Info
@@ -242,16 +129,13 @@ void MainComponent::timerCallback()
     // Update UI based on plugin state
     if (pluginProcessor != nullptr && pluginProcessor->hasPluginLoaded())
     {
-        statusLabel.setText ("Loaded: " + pluginProcessor->getLoadedPluginName(),
-                           juce::dontSendNotification);
-        statusLabel.setColour (juce::Label::textColourId, juce::Colours::green);
-        showEditorButton.setEnabled (true);
+        pluginPanel->setStatusText ("Loaded: " + pluginProcessor->getLoadedPluginName());
+        pluginPanel->setEditorButtonEnabled (true);
     }
     else
     {
-        statusLabel.setText ("No plugin loaded", juce::dontSendNotification);
-        statusLabel.setColour (juce::Label::textColourId, juce::Colours::orange);
-        showEditorButton.setEnabled (false);
+        pluginPanel->setStatusText ("No plugin loaded");
+        pluginPanel->setEditorButtonEnabled (false);
     }
 }
 
@@ -271,7 +155,7 @@ void MainComponent::browseForPlugin()
     if (chooser.browseForFileToOpen())
     {
         auto file = chooser.getResult();
-        pluginPathEditor.setText (file.getFullPathName());
+        pluginPanel->setPluginPath (file.getFullPathName());
     }
 }
 
@@ -399,10 +283,7 @@ void MainComponent::toggleWebServer()
     {
         // Stop the server
         webServer->stop();
-        webServerButton.setButtonText ("Start Web Server");
-        webServerLabel.setText ("Web server: Stopped", juce::dontSendNotification);
-        webServerLabel.setColour (juce::Label::textColourId, juce::Colours::grey);
-        openWebButton.setEnabled (false);
+        webServerPanel->setServerStatus (false, "Web server: Stopped");
 
         infoLabel.setText ("Web server stopped", juce::dontSendNotification);
         infoLabel.setColour (juce::Label::textColourId, juce::Colours::grey);
@@ -412,10 +293,7 @@ void MainComponent::toggleWebServer()
         // Start the server
         if (webServer->start (8080))
         {
-            webServerButton.setButtonText ("Stop Web Server");
-            webServerLabel.setText ("Web server: " + webServer->getServerURL(), juce::dontSendNotification);
-            webServerLabel.setColour (juce::Label::textColourId, juce::Colours::green);
-            openWebButton.setEnabled (true);
+            webServerPanel->setServerStatus (true, "Web server: " + webServer->getServerURL());
 
             infoLabel.setText ("Web server started! Click 'Open Web UI' or visit " + webServer->getServerURL(),
                              juce::dontSendNotification);
@@ -428,8 +306,7 @@ void MainComponent::toggleWebServer()
                 "Web Server Error",
                 "Failed to start web server on port 8080.\nMake sure the port is not already in use.");
 
-            webServerLabel.setText ("Web server: Failed to start", juce::dontSendNotification);
-            webServerLabel.setColour (juce::Label::textColourId, juce::Colours::red);
+            webServerPanel->setServerStatus (false, "Web server: Failed to start");
         }
     }
 }

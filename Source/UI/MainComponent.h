@@ -3,6 +3,9 @@
 #include <JuceHeader.h>
 #include "../PluginHostProcessor.h"
 #include "AudioSettingsComponent.h"
+#include "PluginControlPanel.h"
+#include "AudioControlPanel.h"
+#include "WebServerPanel.h"
 #include "../Web/WebServer.h"
 
 //==============================================================================
@@ -10,12 +13,9 @@
     Main application component that provides the UI for the VST Runner.
 
     Features:
-    - Plugin file browser
-    - Manual path entry
-    - Audio settings dialog
-    - Plugin editor window hosting
-    - Audio/MIDI I/O controls
-    - Input/output volume controls
+    - Plugin file browser and control
+    - Audio settings and gain controls
+    - Audio/MIDI I/O toggles
     - Web interface server
 */
 class MainComponent : public juce::Component,
@@ -34,6 +34,7 @@ private:
     //==============================================================================
     void timerCallback() override;
 
+    // Callback handlers (called from panels)
     void browseForPlugin();
     void loadPluginFromPath (const juce::String& path);
     void openAudioSettings();
@@ -51,32 +52,11 @@ private:
     // Web server
     std::unique_ptr<WebServer> webServer;
 
-    // UI Components
+    // UI Panels
     juce::Label titleLabel;
-
-    juce::Label pluginPathLabel;
-    juce::TextEditor pluginPathEditor;
-    juce::TextButton browseButton;
-    juce::TextButton loadButton;
-
-    juce::Label statusLabel;
-
-    juce::TextButton audioSettingsButton;
-    juce::TextButton showEditorButton;
-
-    juce::TextButton webServerButton;
-    juce::TextButton openWebButton;
-    juce::Label webServerLabel;
-
-    juce::Label inputGainLabel;
-    juce::Slider inputGainSlider;
-
-    juce::Label outputGainLabel;
-    juce::Slider outputGainSlider;
-
-    juce::ToggleButton audioInputToggle;
-    juce::ToggleButton midiInputToggle;
-
+    std::unique_ptr<PluginControlPanel> pluginPanel;
+    std::unique_ptr<AudioControlPanel> audioPanel;
+    std::unique_ptr<WebServerPanel> webServerPanel;
     juce::Label infoLabel;
 
     // Plugin editor window
