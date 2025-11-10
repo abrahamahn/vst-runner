@@ -284,3 +284,62 @@ if(BUILD_TESTS)
 
     message(STATUS "Unit tests enabled - VSTRunnerTests target created")
 endif()
+
+#==============================================================================
+# Benchmarks (optional)
+#==============================================================================
+option(BUILD_BENCHMARKS "Build performance benchmarks" ON)
+
+if(BUILD_BENCHMARKS)
+    # Create console benchmark application
+    juce_add_console_app(VSTRunnerBenchmarks
+        PRODUCT_NAME "VST Runner Benchmarks"
+    )
+
+    # Add benchmark source
+    target_sources(VSTRunnerBenchmarks PRIVATE
+        Source/Benchmarks/AudioProcessingBenchmark.cpp
+    )
+
+    # Link same libraries as main app
+    target_link_libraries(VSTRunnerBenchmarks
+        PRIVATE
+            juce::juce_audio_basics
+            juce::juce_audio_devices
+            juce::juce_audio_formats
+            juce::juce_audio_processors
+            juce::juce_audio_utils
+            juce::juce_core
+            juce::juce_data_structures
+            juce::juce_events
+            juce::juce_graphics
+            juce::juce_gui_basics
+            juce::juce_gui_extra
+        PUBLIC
+            juce::juce_recommended_config_flags
+            juce::juce_recommended_lto_flags
+            juce::juce_recommended_warning_flags
+    )
+
+    # Same compile definitions as main app
+    target_compile_definitions(VSTRunnerBenchmarks
+        PRIVATE
+            JUCE_WEB_BROWSER=0
+            JUCE_USE_CURL=0
+            JUCE_PLUGINHOST_VST3=1
+            JUCE_PLUGINHOST_VST=1
+            JUCE_PLUGINHOST_AU=1
+            JUCE_ASIO=1
+            JUCE_DISPLAY_SPLASH_SCREEN=0
+    )
+
+    # Include directories
+    target_include_directories(VSTRunnerBenchmarks
+        PRIVATE
+            Source
+            Source/Core
+            Source/Benchmarks
+    )
+
+    message(STATUS "Performance benchmarks enabled - VSTRunnerBenchmarks target created")
+endif()

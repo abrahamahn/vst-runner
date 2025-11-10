@@ -108,3 +108,42 @@ tmp/
 
 # User configuration files (saved settings)
 *.ini
+
+# Testing and Coverage
+*.gcov
+*.gcda
+*.gcno
+coverage/
+test_results/
+*.test
+
+# Benchmarks
+benchmarks/results/
+*.benchmark
+
+# Code formatting
+.clang-format-ignore
+*.formatted
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+.docker/
+
+# CI/CD artifacts
+.github/workflows/*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Documentation builds
+docs/_build/
+docs/.buildinfo
+site/
+
+# Package managers
+node_modules/
+.npm/
+.yarn/

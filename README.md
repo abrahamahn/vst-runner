@@ -36,13 +36,13 @@ VST Runner features a modular, layered architecture designed for maintainability
 - **WebServer**: HTTP server for browser-based control
 - **WebAPIHandler**: REST API business logic (decoupled from HTTP protocol)
 
-For detailed architecture documentation, see [ARCHITECTURE.md](ARCHITECTURE.md)
+For detailed architecture documentation, see [docs/dev/ARCHITECTURE.md](docs/dev/ARCHITECTURE.md)
 
 ## Building
 
-For detailed build instructions, see [BUILD.md](BUILD.md).
+For detailed build instructions, see [docs/manual/BUILD.md](docs/manual/BUILD.md).
 
-**Looking for single-file executable or installer packages?** See [BUILD_DISTRIBUTION.md](BUILD_DISTRIBUTION.md) for:
+**Looking for single-file executable or installer packages?** See [docs/manual/BUILD_DISTRIBUTION.md](docs/manual/BUILD_DISTRIBUTION.md) for:
 - **Portable single-file executables** (like GHelper - just download and run!)
 - **Installer packages** (Windows .exe, macOS .dmg, Linux .deb/.rpm)
 - **Platform-specific build scripts** for easy compilation
@@ -165,11 +165,16 @@ cmake --build . --target VSTRunnerTests
 - **Web Layer**: WebAPIHandler endpoints and JSON handling (90%+ coverage goal)
 - **UI Layer**: Panel callbacks and state management (50%+ coverage goal)
 
-For more details, see [ARCHITECTURE.md#testing-strategy](ARCHITECTURE.md#testing-strategy)
+For more details, see [docs/dev/ARCHITECTURE.md#testing-strategy](docs/dev/ARCHITECTURE.md#testing-strategy)
 
 ## Contributing
 
-Contributions are welcome! Please ensure code follows the existing style and includes appropriate tests.
+Contributions are welcome! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Development workflow and setup
+- Coding standards and style guide
+- Testing guidelines
+- Pull request process
+- Commit message guidelines
 
 ## Troubleshooting
 
@@ -185,14 +190,26 @@ Contributions are welcome! Please ensure code follows the existing style and inc
 
 ## Documentation
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Complete architecture documentation and design patterns
-- **[BUILD.md](BUILD.md)** - Detailed build instructions for all platforms
-- **[BUILD_DISTRIBUTION.md](BUILD_DISTRIBUTION.md)** - Single-file executables and installer packages
-- **[SETUP.md](SETUP.md)** - Complete usage guide and setup instructions
-- **[WEB_INTERFACE.md](WEB_INTERFACE.md)** - Web interface API and architecture
-- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Beginner's guide to the tech stack and architecture
-- **[REFACTORING_PHASE2.md](REFACTORING_PHASE2.md)** - Phase 2: Manager pattern refactoring
-- **[REFACTORING_PHASE3.md](REFACTORING_PHASE3.md)** - Phase 3: Modular architecture refactoring
+### User Manuals (`docs/manual/`)
+- **[BUILD.md](docs/manual/BUILD.md)** - Detailed build instructions for all platforms
+- **[BUILD_DISTRIBUTION.md](docs/manual/BUILD_DISTRIBUTION.md)** - Single-file executables and installer packages
+- **[BUILD_WINDOWS_INSTRUCTIONS.md](docs/manual/BUILD_WINDOWS_INSTRUCTIONS.md)** - Windows-specific build guide
+- **[BUILD_CONFIGURATION.md](docs/manual/BUILD_CONFIGURATION.md)** - Build configuration options
+- **[SETUP.md](docs/manual/SETUP.md)** - Complete usage guide and setup instructions
+- **[WEB_INTERFACE.md](docs/manual/WEB_INTERFACE.md)** - Web interface API and architecture
+- **[GETTING_STARTED.md](docs/manual/GETTING_STARTED.md)** - Beginner's guide to the tech stack
+
+### Developer Documentation (`docs/dev/`)
+- **[ARCHITECTURE.md](docs/dev/ARCHITECTURE.md)** - Complete architecture documentation and design patterns
+- **[REFACTORING_PHASE2.md](docs/dev/REFACTORING_PHASE2.md)** - Phase 2: Manager pattern refactoring
+- **[REFACTORING_PHASE3.md](docs/dev/REFACTORING_PHASE3.md)** - Phase 3: Modular architecture refactoring
+- **[REFACTORING.md](docs/dev/REFACTORING.md)** - Initial refactoring documentation
+- **[REFACTORING_LOG.md](docs/dev/REFACTORING_LOG.md)** - Detailed refactoring change log
+
+### Project Documentation (root)
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute to this project
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
+- **[LICENSE](LICENSE)** - MIT License
 
 ## Credits
 
