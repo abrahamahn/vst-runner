@@ -6,6 +6,8 @@ WebServer::WebServer (PluginHostProcessor* processor, juce::AudioDeviceManager* 
       pluginProcessor (processor),
       audioDeviceManager (deviceManager)
 {
+    // Try to load web resources from external files (development mode)
+    loadWebResources();
 }
 
 WebServer::~WebServer()
@@ -94,6 +96,10 @@ void WebServer::run()
                             {
                                 response = serveFile ("index.html");
                             }
+                            else if (path == "/app.js")
+                            {
+                                response = serveFile ("app.js");
+                            }
                             else if (path.startsWith ("/api/status"))
                             {
                                 response = handleGetStatus();
@@ -180,10 +186,21 @@ void WebServer::run()
 //==============================================================================
 juce::String WebServer::serveFile (const juce::String& filename)
 {
-    // Serve embedded HTML
+    // Serve HTML
     if (filename == "index.html" || filename.isEmpty())
     {
         return createHTMLResponse (getIndexHTML());
+    }
+
+    // Serve JavaScript
+    if (filename == "app.js")
+    {
+        juce::String js = getAppJS();
+        return "HTTP/1.1 200 OK\r\n"
+               "Content-Type: application/javascript\r\n"
+               "Content-Length: " + juce::String (js.length()) + "\r\n"
+               "Access-Control-Allow-Origin: *\r\n"
+               "\r\n" + js;
     }
 
     return createHTMLResponse ("<html><body><h1>404 Not Found</h1></body></html>", 404);
@@ -404,8 +421,53 @@ juce::String WebServer::errorResponse (const juce::String& message)
     return jsonResponse (data);
 }
 
+void WebServer::loadWebResources()
+{
+    // Try to load from external files (for development/easy editing)
+    // Look in Source/Web/Resources/ directory relative to binary
+
+    juce::File htmlFile = juce::File::getSpecialLocation (juce::File::currentApplicationFile)
+                                .getParentDirectory()
+                                .getChildFile ("../../../Source/Web/Resources/index.html");
+
+    juce::File jsFile = juce::File::getSpecialLocation (juce::File::currentApplicationFile)
+                              .getParentDirectory()
+                              .getChildFile ("../../../Source/Web/Resources/app.js");
+
+    // Try loading HTML
+    if (htmlFile.existsAsFile())
+    {
+        cachedIndexHTML = htmlFile.loadFileAsString();
+        DBG ("Loaded HTML from external file: " + htmlFile.getFullPathName());
+    }
+
+    // Try loading JS
+    if (jsFile.existsAsFile())
+    {
+        cachedAppJS = jsFile.loadFileAsString();
+        DBG ("Loaded JavaScript from external file: " + jsFile.getFullPathName());
+    }
+}
+
+juce::String WebServer::getAppJS()
+{
+    // Return cached external file if available
+    if (cachedAppJS.isNotEmpty())
+        return cachedAppJS;
+
+    // Otherwise return embedded fallback (for distribution)
+    // TODO: In production builds, use JUCE BinaryData
+    return "";  // Empty for now, will be populated from external file
+}
+
 juce::String WebServer::getIndexHTML()
 {
+    // Return cached external file if available
+    if (cachedIndexHTML.isNotEmpty())
+        return cachedIndexHTML;
+
+    // Otherwise return minimal embedded fallback
+    // In production, use JUCE BinaryData to embed the HTML file
     return R"HTML(
 <!DOCTYPE html>
 <html lang="en">

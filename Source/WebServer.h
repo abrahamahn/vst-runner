@@ -49,12 +49,18 @@ private:
     juce::String serveFile (const juce::String& filename);
     juce::String createHTMLResponse (const juce::String& content, int statusCode = 200);
     juce::String getIndexHTML();
+    juce::String getAppJS();
+    void loadWebResources();
 
     PluginHostProcessor* pluginProcessor;
     juce::AudioDeviceManager* audioDeviceManager;
 
     std::atomic<bool> serverRunning { false };
     int serverPort = 8080;
+
+    // Cached web resources
+    juce::String cachedIndexHTML;
+    juce::String cachedAppJS;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WebServer)
 };
