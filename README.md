@@ -6,11 +6,13 @@ A minimal, lightweight, cross-platform VST plugin host application for Windows a
 
 - 🎵 **Plugin Format Support**: VST2, VST3 (primary), with extensibility for AAX, AU, and CLAP
 - 🖥️ **Cross-Platform**: Windows and macOS compatible
+- 🌐 **Web Interface**: Control your VST plugins from any browser (localhost)
 - 🎛️ **Audio Driver Integration**: Full ASIO support (Windows), CoreAudio (macOS)
 - 🎹 **Plugin Types**: Both audio FX and MIDI instrument plugins
 - 📁 **Easy Plugin Loading**: Native file browser or manual path input
 - ⚡ **Lightweight**: Minimal resource footprint
 - 🔊 **Full Audio I/O**: Input and output signal routing with volume control
+- 🔌 **Dual Mode**: Use as desktop app or web-based controller
 
 ## Architecture
 
@@ -19,6 +21,7 @@ Built with [JUCE](https://juce.com/) - the industry-standard C++ framework for a
 ### Components
 
 - **Main Application Window**: Plugin browser and control interface
+- **Web Server**: Built-in HTTP server for web-based control
 - **Audio Engine**: JUCE AudioDeviceManager for ASIO/driver integration
 - **Plugin Host**: VST2/VST3 plugin loading and hosting
 - **Audio Processor**: Real-time audio/MIDI routing and processing
@@ -62,7 +65,7 @@ cmake --build . --config Release
 
 For detailed setup and usage instructions, see [SETUP.md](SETUP.md).
 
-### Quick Start
+### Desktop Mode (Quick Start)
 
 1. **Launch the application**
 2. **Configure Audio Settings**: Click "Audio Settings" to select your audio interface and configure ASIO drivers
@@ -75,6 +78,19 @@ For detailed setup and usage instructions, see [SETUP.md](SETUP.md).
    - Audio input/output is automatically routed
    - MIDI input is available for instrument plugins
    - Adjust input/output levels as needed
+
+### Web Mode
+
+1. **Start Web Server**: Click "Start Web Server" in the desktop application
+2. **Open Browser**: Click "Open Web UI" or navigate to `http://localhost:8080`
+3. **Control from Browser**:
+   - Load plugins by entering the full path
+   - Adjust input/output gain with sliders
+   - Enable/disable audio and MIDI input
+   - Monitor plugin status in real-time
+4. **Access from Any Device**: Connect from any device on your local network (optional)
+
+**Note**: The web interface runs locally and communicates with the native application. VST plugins are loaded and processed natively on your machine for best performance.
 
 ## Supported Plugin Formats
 

@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "PluginHostProcessor.h"
 #include "AudioSettingsComponent.h"
+#include "WebServer.h"
 
 //==============================================================================
 /**
@@ -15,6 +16,7 @@
     - Plugin editor window hosting
     - Audio/MIDI I/O controls
     - Input/output volume controls
+    - Web interface server
 */
 class MainComponent : public juce::Component,
                       private juce::Timer
@@ -37,12 +39,17 @@ private:
     void openAudioSettings();
     void showPluginEditor();
     void closePluginEditor();
+    void toggleWebServer();
+    void openWebInterface();
 
     //==============================================================================
     // Audio components
     juce::AudioDeviceManager deviceManager;
     std::unique_ptr<PluginHostProcessor> pluginProcessor;
     juce::AudioProcessorPlayer processorPlayer;
+
+    // Web server
+    std::unique_ptr<WebServer> webServer;
 
     // UI Components
     juce::Label titleLabel;
@@ -56,6 +63,10 @@ private:
 
     juce::TextButton audioSettingsButton;
     juce::TextButton showEditorButton;
+
+    juce::TextButton webServerButton;
+    juce::TextButton openWebButton;
+    juce::Label webServerLabel;
 
     juce::Label inputGainLabel;
     juce::Slider inputGainSlider;

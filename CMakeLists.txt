@@ -30,6 +30,8 @@ target_sources(VSTRunner PRIVATE
     Source/PluginHostProcessor.h
     Source/AudioSettingsComponent.cpp
     Source/AudioSettingsComponent.h
+    Source/WebServer.cpp
+    Source/WebServer.h
 )
 
 # Link JUCE modules

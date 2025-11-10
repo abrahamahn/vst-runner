@@ -113,16 +113,42 @@ MainComponent::MainComponent()
     infoLabel.setColour (juce::Label::textColourId, juce::Colours::grey);
     addAndMakeVisible (infoLabel);
 
+    // Setup web server components
+    webServerButton.setButtonText ("Start Web Server");
+    webServerButton.onClick = [this] { toggleWebServer(); };
+    addAndMakeVisible (webServerButton);
+
+    openWebButton.setButtonText ("Open Web UI");
+    openWebButton.onClick = [this] { openWebInterface(); };
+    openWebButton.setEnabled (false);
+    addAndMakeVisible (openWebButton);
+
+    webServerLabel.setText ("Web server: Stopped", juce::dontSendNotification);
+    webServerLabel.setJustificationType (juce::Justification::centred);
+    webServerLabel.setFont (juce::Font (11.0f));
+    webServerLabel.setColour (juce::Label::textColourId, juce::Colours::grey);
+    addAndMakeVisible (webServerLabel);
+
+    // Create web server instance
+    webServer = std::make_unique<WebServer> (pluginProcessor.get(), &deviceManager);
+
     // Start timer for UI updates
     startTimer (100); // Update every 100ms
 
-    setSize (700, 500);
+    setSize (700, 600);
 }
 
 MainComponent::~MainComponent()
 {
     // Clean up
     stopTimer();
+
+    // Stop web server
+    if (webServer != nullptr)
+    {
+        webServer->stop();
+        webServer.reset();
+    }
 
     closePluginEditor();
 
@@ -194,6 +220,17 @@ void MainComponent::resized()
     midiInputToggle.setBounds (area.removeFromTop (30));
 
     area.removeFromTop (20);
+
+    // Web server controls
+    auto webButtonArea = area.removeFromTop (40);
+    webServerButton.setBounds (webButtonArea.removeFromLeft (150));
+    webButtonArea.removeFromLeft (10);
+    openWebButton.setBounds (webButtonArea.removeFromLeft (150));
+
+    area.removeFromTop (5);
+    webServerLabel.setBounds (area.removeFromTop (25));
+
+    area.removeFromTop (15);
 
     // Info
     infoLabel.setBounds (area.removeFromTop (40));
@@ -350,5 +387,59 @@ void MainComponent::closePluginEditor()
         {
             plugin->editorBeingDeleted (plugin->getActiveEditor());
         }
+    }
+}
+
+void MainComponent::toggleWebServer()
+{
+    if (webServer == nullptr)
+        return;
+
+    if (webServer->isRunning())
+    {
+        // Stop the server
+        webServer->stop();
+        webServerButton.setButtonText ("Start Web Server");
+        webServerLabel.setText ("Web server: Stopped", juce::dontSendNotification);
+        webServerLabel.setColour (juce::Label::textColourId, juce::Colours::grey);
+        openWebButton.setEnabled (false);
+
+        infoLabel.setText ("Web server stopped", juce::dontSendNotification);
+        infoLabel.setColour (juce::Label::textColourId, juce::Colours::grey);
+    }
+    else
+    {
+        // Start the server
+        if (webServer->start (8080))
+        {
+            webServerButton.setButtonText ("Stop Web Server");
+            webServerLabel.setText ("Web server: " + webServer->getServerURL(), juce::dontSendNotification);
+            webServerLabel.setColour (juce::Label::textColourId, juce::Colours::green);
+            openWebButton.setEnabled (true);
+
+            infoLabel.setText ("Web server started! Click 'Open Web UI' or visit " + webServer->getServerURL(),
+                             juce::dontSendNotification);
+            infoLabel.setColour (juce::Label::textColourId, juce::Colours::lightgreen);
+        }
+        else
+        {
+            juce::AlertWindow::showMessageBoxAsync (
+                juce::AlertWindow::WarningIcon,
+                "Web Server Error",
+                "Failed to start web server on port 8080.\nMake sure the port is not already in use.");
+
+            webServerLabel.setText ("Web server: Failed to start", juce::dontSendNotification);
+            webServerLabel.setColour (juce::Label::textColourId, juce::Colours::red);
+        }
+    }
+}
+
+void MainComponent::openWebInterface()
+{
+    if (webServer != nullptr && webServer->isRunning())
+    {
+        // Open the web interface in the default browser
+        juce::URL url (webServer->getServerURL());
+        url.launchInDefaultBrowser();
     }
 }
