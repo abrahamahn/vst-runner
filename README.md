@@ -31,6 +31,11 @@ Built with [JUCE](https://juce.com/) - the industry-standard C++ framework for a
 
 For detailed build instructions, see [BUILD.md](BUILD.md).
 
+**Looking for single-file executable or installer packages?** See [BUILD_DISTRIBUTION.md](BUILD_DISTRIBUTION.md) for:
+- **Portable single-file executables** (like GHelper - just download and run!)
+- **Installer packages** (Windows .exe, macOS .dmg, Linux .deb/.rpm)
+- **Platform-specific build scripts** for easy compilation
+
 ### Quick Start
 
 ```bash
@@ -136,6 +141,15 @@ Contributions are welcome! Please ensure code follows the existing style and inc
 - Grant microphone and audio permissions in System Preferences
 - For VST2 plugins, check `/Library/Audio/Plug-Ins/VST/`
 - For VST3 plugins, check `/Library/Audio/Plug-Ins/VST3/`
+
+## Documentation
+
+- **[BUILD.md](BUILD.md)** - Detailed build instructions for all platforms
+- **[BUILD_DISTRIBUTION.md](BUILD_DISTRIBUTION.md)** - Single-file executables and installer packages
+- **[SETUP.md](SETUP.md)** - Complete usage guide and setup instructions
+- **[WEB_INTERFACE.md](WEB_INTERFACE.md)** - Web interface API and architecture
+- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Beginner's guide to the tech stack and architecture
+- **[REFACTORING.md](REFACTORING.md)** - Code refactoring plan and architecture improvements
 
 ## Credits
 

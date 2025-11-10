@@ -6,6 +6,10 @@ project(VSTRunner VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Build options
+option(BUILD_STATIC "Build with static linking for portable single-file executable" OFF)
+option(BUILD_INSTALLER "Build installer package" OFF)
+
 # Add JUCE as a subdirectory
 # JUCE will be added as a git submodule
 add_subdirectory(JUCE)
@@ -135,8 +139,75 @@ elseif(WIN32)
     )
 endif()
 
+# Static linking for portable executable
+if(BUILD_STATIC)
+    if(WIN32)
+        # Static linking on Windows
+        set_target_properties(VSTRunner PROPERTIES
+            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+        )
+        target_link_options(VSTRunner PRIVATE
+            /INCREMENTAL:NO
+            /LTCG
+        )
+    elseif(UNIX AND NOT APPLE)
+        # Static linking on Linux (more challenging - link what we can)
+        target_link_options(VSTRunner PRIVATE
+            -static-libgcc
+            -static-libstdc++
+        )
+    endif()
+
+    message(STATUS "Building with static linking for portable executable")
+endif()
+
 # Installation rules
 install(TARGETS VSTRunner
     BUNDLE DESTINATION .
     RUNTIME DESTINATION bin
 )
+
+# Install web resources
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Source/Web/Resources
+    DESTINATION share/vstrunner
+    OPTIONAL
+)
+
+# CPack configuration for installer generation
+if(BUILD_INSTALLER)
+    set(CPACK_PACKAGE_NAME "VST Runner")
+    set(CPACK_PACKAGE_VENDOR "VSTRunner")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Standalone VST Plugin Host")
+    set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+    set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+    set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+    set(CPACK_PACKAGE_INSTALL_DIRECTORY "VST Runner")
+    set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+
+    # Platform-specific installer settings
+    if(WIN32)
+        # Windows: NSIS installer
+        set(CPACK_GENERATOR "NSIS;ZIP")
+        set(CPACK_NSIS_DISPLAY_NAME "VST Runner")
+        set(CPACK_NSIS_PACKAGE_NAME "VST Runner")
+        set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+        set(CPACK_NSIS_MODIFY_PATH ON)
+        set(CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_SOURCE_DIR}/Resources/icon.ico")
+        set(CPACK_NSIS_MUI_UNIICON "${CMAKE_CURRENT_SOURCE_DIR}/Resources/icon.ico")
+    elseif(APPLE)
+        # macOS: DMG
+        set(CPACK_GENERATOR "DragNDrop;TGZ")
+        set(CPACK_DMG_VOLUME_NAME "VST Runner")
+        set(CPACK_DMG_FORMAT "UDZO")
+    else()
+        # Linux: DEB, RPM, TGZ
+        set(CPACK_GENERATOR "DEB;RPM;TGZ")
+        set(CPACK_DEBIAN_PACKAGE_MAINTAINER "VSTRunner")
+        set(CPACK_DEBIAN_PACKAGE_DEPENDS "libasound2, libfreetype6, libx11-6, libxext6, libxrandr2")
+        set(CPACK_RPM_PACKAGE_LICENSE "MIT")
+        set(CPACK_RPM_PACKAGE_REQUIRES "alsa-lib, freetype, libX11, libXext, libXrandr")
+    endif()
+
+    include(CPack)
+    message(STATUS "Installer generation enabled")
+endif()

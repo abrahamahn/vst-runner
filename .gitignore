@@ -88,3 +88,23 @@ Makefile
 
 # Logs
 *.log
+
+# Distribution and installer files
+dist/
+package/
+installer/
+*.zip
+*.tar.gz
+*.dmg
+*.deb
+*.rpm
+*.msi
+*.msix
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# User configuration files (saved settings)
+*.ini
