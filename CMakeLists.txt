@@ -219,3 +219,68 @@ if(BUILD_INSTALLER)
     include(CPack)
     message(STATUS "Installer generation enabled")
 endif()
+
+#==============================================================================
+# Test Runner (optional)
+#==============================================================================
+option(BUILD_TESTS "Build unit tests" ON)
+
+if(BUILD_TESTS)
+    # Create console test runner application
+    juce_add_console_app(VSTRunnerTests
+        PRODUCT_NAME "VST Runner Tests"
+    )
+
+    # Add test runner source
+    target_sources(VSTRunnerTests PRIVATE
+        Source/Tests/TestRunner.cpp
+
+        # Note: Individual test files are included by TestRunner.cpp
+        # This allows tests to be compiled as part of the test runner
+    )
+
+    # Link same libraries as main app
+    target_link_libraries(VSTRunnerTests
+        PRIVATE
+            juce::juce_audio_basics
+            juce::juce_audio_devices
+            juce::juce_audio_formats
+            juce::juce_audio_processors
+            juce::juce_audio_utils
+            juce::juce_core
+            juce::juce_data_structures
+            juce::juce_events
+            juce::juce_graphics
+            juce::juce_gui_basics
+            juce::juce_gui_extra
+        PUBLIC
+            juce::juce_recommended_config_flags
+            juce::juce_recommended_lto_flags
+            juce::juce_recommended_warning_flags
+    )
+
+    # Same compile definitions as main app
+    target_compile_definitions(VSTRunnerTests
+        PRIVATE
+            JUCE_WEB_BROWSER=0
+            JUCE_USE_CURL=0
+            JUCE_PLUGINHOST_VST3=1
+            JUCE_PLUGINHOST_VST=1
+            JUCE_PLUGINHOST_AU=1
+            JUCE_ASIO=1
+            JUCE_DISPLAY_SPLASH_SCREEN=0
+            JUCE_UNIT_TESTS=1
+    )
+
+    # Include directories
+    target_include_directories(VSTRunnerTests
+        PRIVATE
+            Source
+            Source/Core
+            Source/UI
+            Source/Web
+            Source/Tests
+    )
+
+    message(STATUS "Unit tests enabled - VSTRunnerTests target created")
+endif()

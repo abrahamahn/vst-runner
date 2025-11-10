@@ -18,14 +18,25 @@ A minimal, lightweight, cross-platform VST plugin host application for Windows a
 
 Built with [JUCE](https://juce.com/) - the industry-standard C++ framework for audio applications.
 
-### Components
+VST Runner features a modular, layered architecture designed for maintainability and testability:
 
-- **Main Application Window**: Plugin browser and control interface
-- **Web Server**: Built-in HTTP server for web-based control
-- **Audio Engine**: JUCE AudioDeviceManager for ASIO/driver integration
-- **Plugin Host**: VST2/VST3 plugin loading and hosting
-- **Audio Processor**: Real-time audio/MIDI routing and processing
-- **Plugin Scanner**: Automatic plugin discovery and validation
+### Core Layer
+- **PluginHostProcessor**: Main audio processor with real-time audio/MIDI routing
+- **ConfigurationManager**: Application configuration and state management
+- **PluginManager**: Plugin lifecycle and loading operations
+- **AudioIOManager**: Audio/MIDI I/O control and gain management
+
+### UI Layer
+- **MainComponent**: Main application window (composition of modular panels)
+- **PluginControlPanel**: Plugin browsing, loading, and editor controls
+- **AudioControlPanel**: Audio settings, gain sliders, and I/O toggles
+- **WebServerPanel**: Web server control and status
+
+### Web Layer
+- **WebServer**: HTTP server for browser-based control
+- **WebAPIHandler**: REST API business logic (decoupled from HTTP protocol)
+
+For detailed architecture documentation, see [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## Building
 
@@ -126,6 +137,36 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 See [JUCE Licensing](https://juce.com/juce-7-licence/) for more information.
 
+## Testing
+
+VST Runner includes a comprehensive unit test suite using JUCE's built-in test framework.
+
+### Running Tests
+
+```bash
+# Build tests (enabled by default)
+cmake .. -DBUILD_TESTS=ON
+cmake --build . --target VSTRunnerTests
+
+# Run all tests
+./VSTRunnerTests_artefacts/Debug/VSTRunnerTests
+
+# Run tests by category
+./VSTRunnerTests_artefacts/Debug/VSTRunnerTests --category Core
+./VSTRunnerTests_artefacts/Debug/VSTRunnerTests --category Web
+
+# Run specific test
+./VSTRunnerTests_artefacts/Debug/VSTRunnerTests --test AudioIOManager
+```
+
+### Test Coverage
+
+- **Core Layer**: ConfigurationManager, PluginManager, AudioIOManager (80%+ coverage goal)
+- **Web Layer**: WebAPIHandler endpoints and JSON handling (90%+ coverage goal)
+- **UI Layer**: Panel callbacks and state management (50%+ coverage goal)
+
+For more details, see [ARCHITECTURE.md#testing-strategy](ARCHITECTURE.md#testing-strategy)
+
 ## Contributing
 
 Contributions are welcome! Please ensure code follows the existing style and includes appropriate tests.
@@ -144,12 +185,14 @@ Contributions are welcome! Please ensure code follows the existing style and inc
 
 ## Documentation
 
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Complete architecture documentation and design patterns
 - **[BUILD.md](BUILD.md)** - Detailed build instructions for all platforms
 - **[BUILD_DISTRIBUTION.md](BUILD_DISTRIBUTION.md)** - Single-file executables and installer packages
 - **[SETUP.md](SETUP.md)** - Complete usage guide and setup instructions
 - **[WEB_INTERFACE.md](WEB_INTERFACE.md)** - Web interface API and architecture
 - **[GETTING_STARTED.md](GETTING_STARTED.md)** - Beginner's guide to the tech stack and architecture
-- **[REFACTORING.md](REFACTORING.md)** - Code refactoring plan and architecture improvements
+- **[REFACTORING_PHASE2.md](REFACTORING_PHASE2.md)** - Phase 2: Manager pattern refactoring
+- **[REFACTORING_PHASE3.md](REFACTORING_PHASE3.md)** - Phase 3: Modular architecture refactoring
 
 ## Credits
 
