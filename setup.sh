@@ -83,7 +83,7 @@ if [ "$OS" == "linux" ]; then
     MISSING_DEPS=()
 
     # Check for each required package
-    for pkg in libasound2-dev libjack-jackd2-dev libfreetype6-dev libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev libgl1-mesa-dev libglu1-mesa-dev; do
+    for pkg in libasound2-dev libjack-jackd2-dev libfreetype6-dev libfontconfig1-dev libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev libgl1-mesa-dev libglu1-mesa-dev; do
         if ! dpkg -l | grep -q "^ii  $pkg"; then
             MISSING_DEPS+=($pkg)
         fi
