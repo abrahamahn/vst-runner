@@ -1,0 +1,149 @@
+# Build directories
+build/
+Build/
+cmake-build-*/
+out/
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Compiled files
+*.o
+*.obj
+*.exe
+*.dll
+*.dylib
+*.so
+*.a
+*.lib
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+
+# JUCE specific
+*.jucer~
+JuceLibraryCode/
+Builds/
+
+# OS specific
+Thumbs.db
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Visual Studio
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+.vs/
+x64/
+Debug/
+Release/
+*.suo
+*.user
+*.aps
+*.pch
+*.vspscc
+*.vssscc
+*.ncb
+*.bak
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+# Qt Creator
+*.pro.user
+*.pro.user.*
+*.autosave
+
+# Makefiles
+Makefile
+
+# Plugin scanning cache
+*.vstxml
+*.vst3xml
+
+# Logs
+*.log
+
+# Distribution and installer files
+dist/
+package/
+installer/
+*.zip
+*.tar.gz
+*.dmg
+*.deb
+*.rpm
+*.msi
+*.msix
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# User configuration files (saved settings)
+*.ini
+
+# Testing and Coverage
+*.gcov
+*.gcda
+*.gcno
+coverage/
+test_results/
+*.test
+
+# Benchmarks
+benchmarks/results/
+*.benchmark
+
+# Code formatting
+.clang-format-ignore
+*.formatted
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+.docker/
+
+# CI/CD artifacts
+.github/workflows/*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Documentation builds
+docs/_build/
+docs/.buildinfo
+site/
+
+# Package managers
+node_modules/
+.npm/
+.yarn/
