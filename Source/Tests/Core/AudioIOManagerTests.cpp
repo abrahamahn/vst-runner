@@ -1,4 +1,7 @@
-#include <JuceHeader.h>
+#include <juce_audio_basics/juce_audio_basics.h>
+#include <juce_core/juce_core.h>
+#include <thread>
+
 #include "../../Core/AudioIOManager.h"
 
 /**
@@ -23,8 +26,8 @@ public:
         {
             AudioIOManager manager;
 
-            expect (manager.getInputGain() == 1.0f, "Default input gain should be 1.0");
-            expect (manager.getOutputGain() == 1.0f, "Default output gain should be 1.0");
+            expectWithinAbsoluteError (manager.getInputGain(), 1.0f, 0.0001f, "Default input gain should be 1.0");
+            expectWithinAbsoluteError (manager.getOutputGain(), 1.0f, 0.0001f, "Default output gain should be 1.0");
             expect (manager.isAudioInputEnabled() == true, "Audio input should be enabled by default");
             expect (manager.isMidiInputEnabled() == true, "MIDI input should be enabled by default");
         }
@@ -33,14 +36,13 @@ public:
         {
             AudioIOManager manager;
 
-            // Test various valid gain values
             float testGains[] = { 0.0f, 0.25f, 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f };
 
             for (float gain : testGains)
             {
                 manager.setInputGain (gain);
                 expectWithinAbsoluteError (manager.getInputGain(), gain, 0.0001f,
-                    "Input gain should be set correctly");
+                                           "Input gain should be set correctly");
             }
         }
 
@@ -48,14 +50,13 @@ public:
         {
             AudioIOManager manager;
 
-            // Test various valid gain values
             float testGains[] = { 0.0f, 0.5f, 1.0f, 1.5f, 2.0f };
 
             for (float gain : testGains)
             {
                 manager.setOutputGain (gain);
                 expectWithinAbsoluteError (manager.getOutputGain(), gain, 0.0001f,
-                    "Output gain should be set correctly");
+                                           "Output gain should be set correctly");
             }
         }
 
@@ -63,7 +64,6 @@ public:
         {
             AudioIOManager manager;
 
-            // Test values outside valid range
             manager.setInputGain (-1.0f);
             expect (manager.getInputGain() >= 0.0f, "Negative gain should be clamped to minimum");
 
@@ -75,7 +75,6 @@ public:
         {
             AudioIOManager manager;
 
-            // Test values outside valid range
             manager.setOutputGain (-0.5f);
             expect (manager.getOutputGain() >= 0.0f, "Negative gain should be clamped to minimum");
 
@@ -87,20 +86,17 @@ public:
         {
             AudioIOManager manager;
 
-            // Test disabling
             manager.setAudioInputEnabled (false);
             expect (!manager.isAudioInputEnabled(), "Audio input should be disabled");
 
-            // Test re-enabling
             manager.setAudioInputEnabled (true);
             expect (manager.isAudioInputEnabled(), "Audio input should be enabled");
 
-            // Test multiple toggles
             for (int i = 0; i < 5; ++i)
             {
                 manager.setAudioInputEnabled (i % 2 == 0);
                 expect (manager.isAudioInputEnabled() == (i % 2 == 0),
-                    "Audio input state should toggle correctly");
+                        "Audio input state should toggle correctly");
             }
         }
 
@@ -108,20 +104,17 @@ public:
         {
             AudioIOManager manager;
 
-            // Test disabling
             manager.setMidiInputEnabled (false);
             expect (!manager.isMidiInputEnabled(), "MIDI input should be disabled");
 
-            // Test re-enabling
             manager.setMidiInputEnabled (true);
             expect (manager.isMidiInputEnabled(), "MIDI input should be enabled");
 
-            // Test multiple toggles
             for (int i = 0; i < 5; ++i)
             {
                 manager.setMidiInputEnabled (i % 2 == 1);
                 expect (manager.isMidiInputEnabled() == (i % 2 == 1),
-                    "MIDI input state should toggle correctly");
+                        "MIDI input state should toggle correctly");
             }
         }
 
@@ -130,7 +123,6 @@ public:
             AudioIOManager manager;
             manager.setInputGain (0.5f);
 
-            // Create test buffer with known values
             juce::AudioBuffer<float> buffer (2, 512);
             buffer.clear();
 
@@ -139,21 +131,19 @@ public:
                 auto* channelData = buffer.getWritePointer (ch);
                 for (int i = 0; i < buffer.getNumSamples(); ++i)
                 {
-                    channelData[i] = 1.0f; // Fill with 1.0
+                    channelData[i] = 1.0f;
                 }
             }
 
-            // Apply input gain
-            manager.applyInputGain (buffer);
+            manager.processInputGain (buffer);
 
-            // Verify gain was applied
             for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
             {
                 auto* channelData = buffer.getReadPointer (ch);
                 for (int i = 0; i < buffer.getNumSamples(); ++i)
                 {
                     expectWithinAbsoluteError (channelData[i], 0.5f, 0.0001f,
-                        "Input gain should be applied to buffer");
+                                               "Input gain should be applied to buffer");
                 }
             }
         }
@@ -163,7 +153,6 @@ public:
             AudioIOManager manager;
             manager.setOutputGain (2.0f);
 
-            // Create test buffer with known values
             juce::AudioBuffer<float> buffer (2, 512);
             buffer.clear();
 
@@ -172,21 +161,19 @@ public:
                 auto* channelData = buffer.getWritePointer (ch);
                 for (int i = 0; i < buffer.getNumSamples(); ++i)
                 {
-                    channelData[i] = 0.5f; // Fill with 0.5
+                    channelData[i] = 0.5f;
                 }
             }
 
-            // Apply output gain
-            manager.applyOutputGain (buffer);
+            manager.processOutputGain (buffer);
 
-            // Verify gain was applied
             for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
             {
                 auto* channelData = buffer.getReadPointer (ch);
                 for (int i = 0; i < buffer.getNumSamples(); ++i)
                 {
                     expectWithinAbsoluteError (channelData[i], 1.0f, 0.0001f,
-                        "Output gain should be applied to buffer");
+                                               "Output gain should be applied to buffer");
                 }
             }
         }
@@ -196,7 +183,6 @@ public:
             AudioIOManager manager;
             manager.setAudioInputEnabled (false);
 
-            // Create test buffer with non-zero values
             juce::AudioBuffer<float> buffer (2, 512);
             for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
             {
@@ -207,17 +193,15 @@ public:
                 }
             }
 
-            // Apply input gain (should clear when disabled)
-            manager.applyInputGain (buffer);
+            manager.processInputGain (buffer);
 
-            // Verify buffer was cleared
             for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
             {
                 auto* channelData = buffer.getReadPointer (ch);
                 for (int i = 0; i < buffer.getNumSamples(); ++i)
                 {
                     expectWithinAbsoluteError (channelData[i], 0.0f, 0.0001f,
-                        "Buffer should be cleared when input is disabled");
+                                               "Buffer should be cleared when input is disabled");
                 }
             }
         }
@@ -226,9 +210,8 @@ public:
         {
             AudioIOManager manager;
 
-            // Simulate concurrent reads and writes
             std::atomic<bool> running (true);
-            int numErrors = 0;
+            std::atomic<int> numErrors (0);
 
             auto readerThread = [&]()
             {
@@ -238,10 +221,12 @@ public:
                     float outputGain = manager.getOutputGain();
                     bool audioEnabled = manager.isAudioInputEnabled();
                     bool midiEnabled = manager.isMidiInputEnabled();
+                    juce::ignoreUnused (audioEnabled, midiEnabled);
 
-                    // Verify values are in valid range
-                    if (inputGain < 0.0f || inputGain > 2.0f) ++numErrors;
-                    if (outputGain < 0.0f || outputGain > 2.0f) ++numErrors;
+                    if (inputGain < 0.0f || inputGain > 2.0f)
+                        ++numErrors;
+                    if (outputGain < 0.0f || outputGain > 2.0f)
+                        ++numErrors;
                 }
             };
 
@@ -249,8 +234,8 @@ public:
             {
                 for (int i = 0; i < 100; ++i)
                 {
-                    manager.setInputGain (static_cast<float>(i % 100) / 50.0f);
-                    manager.setOutputGain (static_cast<float>((i + 50) % 100) / 50.0f);
+                    manager.setInputGain (static_cast<float> (i % 100) / 50.0f);
+                    manager.setOutputGain (static_cast<float> ((i + 50) % 100) / 50.0f);
                     manager.setAudioInputEnabled (i % 2 == 0);
                     manager.setMidiInputEnabled (i % 3 == 0);
                     juce::Thread::sleep (1);
@@ -264,10 +249,9 @@ public:
             running = false;
             reader.join();
 
-            expect (numErrors == 0, "No invalid values should be read during concurrent access");
+            expect (numErrors.load() == 0, "No invalid values should be read during concurrent access");
         }
     }
 };
 
-// Register the test
 static AudioIOManagerTests audioIOManagerTests;

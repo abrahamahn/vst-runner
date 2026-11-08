@@ -1,15 +1,12 @@
 #pragma once
 
-#include <JuceHeader.h>
+#include <juce_core/juce_core.h>
+
 #include "WebAPIHandler.h"
 
 /**
     HTTP server for web interface.
     Handles HTTP protocol and delegates API logic to WebAPIHandler.
-
-    Refactored in Phase 3 to separate concerns:
-    - WebServer: HTTP protocol, resource serving
-    - WebAPIHandler: API business logic
 */
 class WebServer : private juce::Thread
 {
@@ -35,20 +32,27 @@ public:
 private:
     void run() override;
 
-    // Resource serving
+    // HTTP request routing
+    juce::String handleHttpRequest (const juce::String& request);
+    juce::String handleGetRequest (const juce::String& path);
+    juce::String handlePostRequest (const juce::String& path, const juce::String& body);
+
+    // Resource and HTTP response formatting
     juce::String serveFile (const juce::String& filename);
+    juce::String createHttpResponse (const juce::String& content,
+                                     const juce::String& contentType,
+                                     int statusCode = 200);
     juce::String createHTMLResponse (const juce::String& content, int statusCode = 200);
+    juce::String createJSONResponse (const juce::String& content, int statusCode = 200);
     juce::String getIndexHTML();
     juce::String getAppJS();
     void loadWebResources();
 
-    // API handler (delegates all business logic)
     std::unique_ptr<WebAPIHandler> apiHandler;
 
     std::atomic<bool> serverRunning { false };
     int serverPort = 8080;
 
-    // Cached web resources
     juce::String cachedIndexHTML;
     juce::String cachedAppJS;
 

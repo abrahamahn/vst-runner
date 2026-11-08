@@ -1,11 +1,12 @@
 #include "WebServer.h"
 
+#include <BinaryData.h>
+
 //==============================================================================
 WebServer::WebServer (PluginHostProcessor* processor, juce::AudioDeviceManager* deviceManager)
     : Thread ("WebServerThread"),
       apiHandler (std::make_unique<WebAPIHandler> (processor, deviceManager))
 {
-    // Try to load web resources from external files (development mode)
     loadWebResources();
 }
 
@@ -23,7 +24,6 @@ bool WebServer::start (int port)
     serverPort = port;
     startThread();
 
-    // Wait a bit for server to start
     juce::Thread::sleep (100);
 
     return serverRunning;
@@ -46,8 +46,7 @@ juce::String WebServer::getServerURL() const
 //==============================================================================
 void WebServer::run()
 {
-    // Create a streaming socket server
-    std::unique_ptr<juce::StreamingSocket> serverSocket (new juce::StreamingSocket());
+    auto serverSocket = std::make_unique<juce::StreamingSocket>();
 
     if (!serverSocket->createListener (serverPort))
     {
@@ -60,121 +59,30 @@ void WebServer::run()
 
     while (!threadShouldExit())
     {
-        // Accept incoming connections with a timeout
-        std::unique_ptr<juce::StreamingSocket> clientSocket (new juce::StreamingSocket());
-
-        if (serverSocket->waitForNextConnection (*clientSocket, 100))
+        if (serverSocket->waitUntilReady (true, 100) == 1)
         {
-            // Read HTTP request
-            juce::MemoryBlock requestData;
-            char buffer[4096];
+            std::unique_ptr<juce::StreamingSocket> clientSocket (serverSocket->waitForNextConnection());
 
-            int bytesRead = clientSocket->read (buffer, sizeof (buffer), false);
-
-            if (bytesRead > 0)
+            if (clientSocket != nullptr)
             {
-                juce::String request (buffer, bytesRead);
-                juce::String response;
+                char buffer[4096];
+                const int bytesRead = clientSocket->read (buffer, sizeof (buffer), false);
 
-                // Parse HTTP request
-                auto lines = juce::StringArray::fromLines (request);
-                if (lines.size() > 0)
+                if (bytesRead > 0)
                 {
-                    auto requestLine = lines[0];
-                    auto tokens = juce::StringArray::fromTokens (requestLine, " ", "");
+                    const juce::String request = juce::String::fromUTF8 (buffer, bytesRead);
+                    const juce::String response = handleHttpRequest (request);
 
-                    if (tokens.size() >= 2)
+                    if (response.isNotEmpty())
                     {
-                        auto method = tokens[0];
-                        auto path = tokens[1];
-
-                        // Handle different endpoints
-                        if (method == "GET")
-                        {
-                            if (path == "/" || path == "/index.html")
-                            {
-                                response = serveFile ("index.html");
-                            }
-                            else if (path == "/app.js")
-                            {
-                                response = serveFile ("app.js");
-                            }
-                            else if (path.startsWith ("/api/status"))
-                            {
-                                response = apiHandler->handleGetStatus();
-                            }
-                            else if (path.startsWith ("/api/plugin/info"))
-                            {
-                                response = apiHandler->handleGetPluginInfo();
-                            }
-                            else if (path.startsWith ("/api/audio/settings"))
-                            {
-                                response = apiHandler->handleGetAudioSettings();
-                            }
-                            else
-                            {
-                                // Serve static files
-                                response = serveFile (path.substring (1));
-                            }
-                        }
-                        else if (method == "POST")
-                        {
-                            // Extract body from request
-                            auto bodyStart = request.indexOf ("\r\n\r\n");
-                            juce::String body;
-
-                            if (bodyStart >= 0)
-                                body = request.substring (bodyStart + 4);
-
-                            // Parse JSON body
-                            auto json = juce::JSON::parse (body);
-
-                            if (path.startsWith ("/api/plugin/load"))
-                            {
-                                auto pluginPath = json["path"].toString();
-                                response = apiHandler->handleLoadPlugin (pluginPath);
-                            }
-                            else if (path.startsWith ("/api/plugin/unload"))
-                            {
-                                response = apiHandler->handleUnloadPlugin();
-                            }
-                            else if (path.startsWith ("/api/control/input-gain"))
-                            {
-                                auto gain = (float) json["gain"];
-                                response = apiHandler->handleSetInputGain (gain);
-                            }
-                            else if (path.startsWith ("/api/control/output-gain"))
-                            {
-                                auto gain = (float) json["gain"];
-                                response = apiHandler->handleSetOutputGain (gain);
-                            }
-                            else if (path.startsWith ("/api/control/audio-input"))
-                            {
-                                auto enabled = (bool) json["enabled"];
-                                response = apiHandler->handleSetAudioInput (enabled);
-                            }
-                            else if (path.startsWith ("/api/control/midi-input"))
-                            {
-                                auto enabled = (bool) json["enabled"];
-                                response = apiHandler->handleSetMidiInput (enabled);
-                            }
-                            else if (path.startsWith ("/api/plugins/scan"))
-                            {
-                                auto directory = json["directory"].toString();
-                                response = apiHandler->handleScanPlugins (directory);
-                            }
-                        }
-
-                        // Send response
-                        if (response.isNotEmpty())
-                        {
-                            clientSocket->write (response.toRawUTF8(), response.length());
-                        }
+                        clientSocket->write (
+                            response.toRawUTF8(),
+                            static_cast<int> (response.getNumBytesAsUTF8()));
                     }
                 }
-            }
 
-            clientSocket->close();
+                clientSocket->close();
+            }
         }
     }
 
@@ -183,63 +91,130 @@ void WebServer::run()
 }
 
 //==============================================================================
-juce::String WebServer::serveFile (const juce::String& filename)
+juce::String WebServer::handleHttpRequest (const juce::String& request)
 {
-    // Serve HTML
-    if (filename == "index.html" || filename.isEmpty())
+    const auto lines = juce::StringArray::fromLines (request);
+    if (lines.isEmpty())
+        return {};
+
+    const auto tokens = juce::StringArray::fromTokens (lines[0], " ", "");
+    if (tokens.size() < 2)
+        return {};
+
+    const auto& method = tokens[0];
+    const auto& path = tokens[1];
+
+    if (method == "GET")
+        return handleGetRequest (path);
+
+    if (method == "POST")
     {
-        return createHTMLResponse (getIndexHTML());
+        const auto bodyStart = request.indexOf ("\r\n\r\n");
+        const juce::String body = (bodyStart >= 0) ? request.substring (bodyStart + 4) : juce::String();
+        return handlePostRequest (path, body);
     }
 
-    // Serve JavaScript
+    return {};
+}
+
+juce::String WebServer::handleGetRequest (const juce::String& path)
+{
+    if (path == "/" || path == "/index.html")
+        return serveFile ("index.html");
+
+    if (path == "/app.js")
+        return serveFile ("app.js");
+
+    if (path.startsWith ("/api/status"))
+        return createJSONResponse (apiHandler->handleGetStatus());
+
+    if (path.startsWith ("/api/plugin/info"))
+        return createJSONResponse (apiHandler->handleGetPluginInfo());
+
+    if (path.startsWith ("/api/audio/settings"))
+        return createJSONResponse (apiHandler->handleGetAudioSettings());
+
+    return serveFile (path.substring (1));
+}
+
+juce::String WebServer::handlePostRequest (const juce::String& path, const juce::String& body)
+{
+    const auto json = juce::JSON::parse (body);
+
+    if (path.startsWith ("/api/plugin/load"))
+        return createJSONResponse (apiHandler->handleLoadPlugin (json["path"].toString()));
+
+    if (path.startsWith ("/api/plugin/unload"))
+        return createJSONResponse (apiHandler->handleUnloadPlugin());
+
+    if (path.startsWith ("/api/control/input-gain"))
+        return createJSONResponse (apiHandler->handleSetInputGain (static_cast<float> (json["gain"])));
+
+    if (path.startsWith ("/api/control/output-gain"))
+        return createJSONResponse (apiHandler->handleSetOutputGain (static_cast<float> (json["gain"])));
+
+    if (path.startsWith ("/api/control/audio-input"))
+        return createJSONResponse (apiHandler->handleSetAudioInput (static_cast<bool> (json["enabled"])));
+
+    if (path.startsWith ("/api/control/midi-input"))
+        return createJSONResponse (apiHandler->handleSetMidiInput (static_cast<bool> (json["enabled"])));
+
+    if (path.startsWith ("/api/plugins/scan"))
+        return createJSONResponse (apiHandler->handleScanPlugins (json["directory"].toString()));
+
+    return createJSONResponse (apiHandler->errorResponse ("Unknown endpoint"), 404);
+}
+
+//==============================================================================
+juce::String WebServer::serveFile (const juce::String& filename)
+{
+    if (filename == "index.html" || filename.isEmpty())
+        return createHTMLResponse (getIndexHTML());
+
     if (filename == "app.js")
-    {
-        juce::String js = getAppJS();
-        return "HTTP/1.1 200 OK\r\n"
-               "Content-Type: application/javascript\r\n"
-               "Content-Length: " + juce::String (js.length()) + "\r\n"
-               "Access-Control-Allow-Origin: *\r\n"
-               "\r\n" + js;
-    }
+        return createHttpResponse (getAppJS(), "application/javascript");
 
     return createHTMLResponse ("<html><body><h1>404 Not Found</h1></body></html>", 404);
 }
 
-juce::String WebServer::createHTMLResponse (const juce::String& content, int statusCode)
+juce::String WebServer::createHttpResponse (const juce::String& content,
+                                            const juce::String& contentType,
+                                            int statusCode)
 {
-    juce::String statusText = (statusCode == 200) ? "OK" : "Not Found";
+    const juce::String statusText = (statusCode == 200) ? "OK" : "Not Found";
 
     return "HTTP/1.1 " + juce::String (statusCode) + " " + statusText + "\r\n"
-           "Content-Type: text/html\r\n"
-           "Content-Length: " + juce::String (content.length()) + "\r\n"
+           "Content-Type: " + contentType + "\r\n"
+           "Content-Length: " + juce::String (content.getNumBytesAsUTF8()) + "\r\n"
            "Access-Control-Allow-Origin: *\r\n"
            "\r\n" + content;
 }
 
-//==============================================================================
-// Web Resource Loading
+juce::String WebServer::createHTMLResponse (const juce::String& content, int statusCode)
+{
+    return createHttpResponse (content, "text/html", statusCode);
+}
 
+juce::String WebServer::createJSONResponse (const juce::String& content, int statusCode)
+{
+    return createHttpResponse (content, "application/json", statusCode);
+}
+
+//==============================================================================
 void WebServer::loadWebResources()
 {
-    // Try to load from external files (for development/easy editing)
-    // Look in Source/Web/Resources/ directory relative to binary
+    const juce::File appDir = juce::File::getSpecialLocation (juce::File::currentApplicationFile)
+                                  .getParentDirectory();
 
-    juce::File htmlFile = juce::File::getSpecialLocation (juce::File::currentApplicationFile)
-                                .getParentDirectory()
-                                .getChildFile ("../../../Source/Web/Resources/index.html");
+    const juce::File htmlFile = appDir.getChildFile ("../../../Source/Web/Resources/index.html");
+    const juce::File jsFile = appDir.getChildFile ("../../../Source/Web/Resources/app.js");
 
-    juce::File jsFile = juce::File::getSpecialLocation (juce::File::currentApplicationFile)
-                              .getParentDirectory()
-                              .getChildFile ("../../../Source/Web/Resources/app.js");
-
-    // Try loading HTML
     if (htmlFile.existsAsFile())
     {
         cachedIndexHTML = htmlFile.loadFileAsString();
         DBG ("Loaded HTML from external file: " + htmlFile.getFullPathName());
     }
 
-    // Try loading JS
     if (jsFile.existsAsFile())
     {
         cachedAppJS = jsFile.loadFileAsString();
@@ -249,580 +224,16 @@ void WebServer::loadWebResources()
 
 juce::String WebServer::getAppJS()
 {
-    // Return cached external file if available
     if (cachedAppJS.isNotEmpty())
         return cachedAppJS;
 
-    // Otherwise return embedded fallback (for distribution)
-    // TODO: In production builds, use JUCE BinaryData
-    return "";  // Empty for now, will be populated from external file
+    return juce::String::fromUTF8 (WebResources::app_js, WebResources::app_jsSize);
 }
 
 juce::String WebServer::getIndexHTML()
 {
-    // Return cached external file if available
     if (cachedIndexHTML.isNotEmpty())
         return cachedIndexHTML;
 
-    // Otherwise return minimal embedded fallback
-    // In production, use JUCE BinaryData to embed the HTML file
-    return R"HTML(
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VST Runner - Web Interface</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
-
-        .content {
-            padding: 30px;
-        }
-
-        .section {
-            margin-bottom: 30px;
-        }
-
-        .section h2 {
-            font-size: 20px;
-            margin-bottom: 15px;
-            color: #333;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 8px;
-        }
-
-        .status {
-            background: #f7fafc;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .status-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .status-item:last-child {
-            border-bottom: none;
-        }
-
-        .status-label {
-            font-weight: 600;
-            color: #4a5568;
-        }
-
-        .status-value {
-            color: #2d3748;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-
-        .status-indicator.active {
-            background: #48bb78;
-        }
-
-        .status-indicator.inactive {
-            background: #f56565;
-        }
-
-        .input-group {
-            margin-bottom: 15px;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #4a5568;
-        }
-
-        .input-group input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-
-        .input-group input[type="text"]:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .input-group input[type="range"] {
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: #e2e8f0;
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        .input-group input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #667eea;
-            cursor: pointer;
-        }
-
-        .input-group input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #667eea;
-            cursor: pointer;
-            border: none;
-        }
-
-        .slider-value {
-            text-align: right;
-            color: #667eea;
-            font-weight: 600;
-            margin-top: 5px;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex: 1;
-            min-width: 120px;
-        }
-
-        button.primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        button.primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        button.secondary {
-            background: #f7fafc;
-            color: #4a5568;
-            border: 2px solid #e2e8f0;
-        }
-
-        button.secondary:hover {
-            background: #e2e8f0;
-        }
-
-        button.danger {
-            background: #f56565;
-            color: white;
-        }
-
-        button.danger:hover {
-            background: #e53e3e;
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .toggle {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            background: #f7fafc;
-            border-radius: 6px;
-            margin-bottom: 10px;
-        }
-
-        .toggle label {
-            flex: 1;
-            font-weight: 600;
-            color: #4a5568;
-            cursor: pointer;
-        }
-
-        .toggle input[type="checkbox"] {
-            width: 50px;
-            height: 26px;
-            position: relative;
-            -webkit-appearance: none;
-            background: #cbd5e0;
-            outline: none;
-            border-radius: 13px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .toggle input[type="checkbox"]:checked {
-            background: #667eea;
-        }
-
-        .toggle input[type="checkbox"]:before {
-            content: '';
-            position: absolute;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            top: 2px;
-            left: 2px;
-            background: white;
-            transition: 0.3s;
-        }
-
-        .toggle input[type="checkbox"]:checked:before {
-            left: 26px;
-        }
-
-        .alert {
-            padding: 12px 16px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            display: none;
-        }
-
-        .alert.success {
-            background: #c6f6d5;
-            color: #22543d;
-            border-left: 4px solid #48bb78;
-        }
-
-        .alert.error {
-            background: #fed7d7;
-            color: #742a2a;
-            border-left: 4px solid #f56565;
-        }
-
-        .alert.show {
-            display: block;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(-10px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #718096;
-            font-size: 12px;
-            border-top: 1px solid #e2e8f0;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🎵 VST Runner</h1>
-            <p>Web Interface - Control your VST plugins from anywhere</p>
-        </div>
-
-        <div class="content">
-            <div id="alert" class="alert"></div>
-
-            <!-- Status Section -->
-            <div class="section">
-                <h2>Status</h2>
-                <div class="status">
-                    <div class="status-item">
-                        <span class="status-label">
-                            <span id="serverStatus" class="status-indicator"></span>
-                            Server Status
-                        </span>
-                        <span class="status-value" id="serverStatusText">Connecting...</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Plugin Loaded</span>
-                        <span class="status-value" id="pluginName">None</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Plugin Loading Section -->
-            <div class="section">
-                <h2>Load Plugin</h2>
-                <div class="input-group">
-                    <label for="pluginPath">Plugin Path</label>
-                    <input type="text" id="pluginPath" placeholder="Enter full path to plugin file (e.g., C:\Path\To\Plugin.dll)">
-                </div>
-                <div class="button-group">
-                    <button class="primary" onclick="loadPlugin()">Load Plugin</button>
-                    <button class="danger" onclick="unloadPlugin()">Unload Plugin</button>
-                </div>
-            </div>
-
-            <!-- Audio Controls Section -->
-            <div class="section">
-                <h2>Audio Controls</h2>
-
-                <div class="input-group">
-                    <label for="inputGain">Input Gain</label>
-                    <input type="range" id="inputGain" min="0" max="2" step="0.01" value="1" oninput="updateInputGain(this.value)">
-                    <div class="slider-value"><span id="inputGainValue">1.00</span>x</div>
-                </div>
-
-                <div class="input-group">
-                    <label for="outputGain">Output Gain</label>
-                    <input type="range" id="outputGain" min="0" max="2" step="0.01" value="1" oninput="updateOutputGain(this.value)">
-                    <div class="slider-value"><span id="outputGainValue">1.00</span>x</div>
-                </div>
-
-                <div class="toggle">
-                    <label for="audioInput">Audio Input Enabled</label>
-                    <input type="checkbox" id="audioInput" checked onchange="updateAudioInput(this.checked)">
-                </div>
-
-                <div class="toggle">
-                    <label for="midiInput">MIDI Input Enabled</label>
-                    <input type="checkbox" id="midiInput" checked onchange="updateMidiInput(this.checked)">
-                </div>
-            </div>
-        </div>
-
-        <div class="footer">
-            VST Runner Web Interface | Built with JUCE | <span id="serverUrl"></span>
-        </div>
-    </div>
-
-    <script>
-        // Configuration
-        const API_BASE = window.location.origin;
-        let updateInterval;
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('serverUrl').textContent = API_BASE;
-            startStatusUpdates();
-        });
-
-        // Start periodic status updates
-        function startStatusUpdates() {
-            updateStatus();
-            updateInterval = setInterval(updateStatus, 1000);
-        }
-
-        // Update status from server
-        async function updateStatus() {
-            try {
-                const [statusRes, pluginRes] = await Promise.all([
-                    fetch(`${API_BASE}/api/status`),
-                    fetch(`${API_BASE}/api/plugin/info`)
-                ]);
-
-                const status = await statusRes.json();
-                const plugin = await pluginRes.json();
-
-                // Update UI
-                document.getElementById('serverStatus').className =
-                    'status-indicator ' + (status.running ? 'active' : 'inactive');
-                document.getElementById('serverStatusText').textContent =
-                    status.running ? 'Running' : 'Disconnected';
-
-                document.getElementById('pluginName').textContent =
-                    plugin.loaded ? plugin.name : 'None';
-
-                // Update controls from server state
-                if (status.running) {
-                    document.getElementById('inputGain').value = status.inputGain;
-                    document.getElementById('inputGainValue').textContent = status.inputGain.toFixed(2);
-
-                    document.getElementById('outputGain').value = status.outputGain;
-                    document.getElementById('outputGainValue').textContent = status.outputGain.toFixed(2);
-
-                    document.getElementById('audioInput').checked = status.audioInputEnabled;
-                    document.getElementById('midiInput').checked = status.midiInputEnabled;
-                }
-            } catch (error) {
-                document.getElementById('serverStatus').className = 'status-indicator inactive';
-                document.getElementById('serverStatusText').textContent = 'Disconnected';
-            }
-        }
-
-        // Load plugin
-        async function loadPlugin() {
-            const path = document.getElementById('pluginPath').value.trim();
-
-            if (!path) {
-                showAlert('Please enter a plugin path', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE}/api/plugin/load`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: path })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showAlert(`Plugin loaded: ${result.pluginName}`, 'success');
-                    updateStatus();
-                } else {
-                    showAlert(result.error || 'Failed to load plugin', 'error');
-                }
-            } catch (error) {
-                showAlert('Error loading plugin: ' + error.message, 'error');
-            }
-        }
-
-        // Unload plugin
-        async function unloadPlugin() {
-            try {
-                const response = await fetch(`${API_BASE}/api/plugin/unload`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showAlert('Plugin unloaded', 'success');
-                    document.getElementById('pluginPath').value = '';
-                    updateStatus();
-                } else {
-                    showAlert(result.error || 'Failed to unload plugin', 'error');
-                }
-            } catch (error) {
-                showAlert('Error unloading plugin: ' + error.message, 'error');
-            }
-        }
-
-        // Update input gain
-        async function updateInputGain(value) {
-            document.getElementById('inputGainValue').textContent = parseFloat(value).toFixed(2);
-
-            try {
-                await fetch(`${API_BASE}/api/control/input-gain`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ gain: parseFloat(value) })
-                });
-            } catch (error) {
-                console.error('Error updating input gain:', error);
-            }
-        }
-
-        // Update output gain
-        async function updateOutputGain(value) {
-            document.getElementById('outputGainValue').textContent = parseFloat(value).toFixed(2);
-
-            try {
-                await fetch(`${API_BASE}/api/control/output-gain`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ gain: parseFloat(value) })
-                });
-            } catch (error) {
-                console.error('Error updating output gain:', error);
-            }
-        }
-
-        // Update audio input
-        async function updateAudioInput(enabled) {
-            try {
-                await fetch(`${API_BASE}/api/control/audio-input`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ enabled: enabled })
-                });
-            } catch (error) {
-                console.error('Error updating audio input:', error);
-            }
-        }
-
-        // Update MIDI input
-        async function updateMidiInput(enabled) {
-            try {
-                await fetch(`${API_BASE}/api/control/midi-input`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ enabled: enabled })
-                });
-            } catch (error) {
-                console.error('Error updating MIDI input:', error);
-            }
-        }
-
-        // Show alert message
-        function showAlert(message, type) {
-            const alert = document.getElementById('alert');
-            alert.textContent = message;
-            alert.className = `alert ${type} show`;
-
-            setTimeout(() => {
-                alert.className = 'alert';
-            }, 5000);
-        }
-    </script>
-</body>
-</html>
-)HTML";
+    return juce::String::fromUTF8 (WebResources::index_html, WebResources::index_htmlSize);
 }

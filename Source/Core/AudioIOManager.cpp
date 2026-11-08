@@ -16,7 +16,7 @@ void AudioIOManager::setInputGain (float gain)
 {
     float clampedGain = juce::jlimit (0.0f, 2.0f, gain);
 
-    if (inputGain.load() != clampedGain)
+    if (!juce::approximatelyEqual (inputGain.load(), clampedGain))
     {
         inputGain.store (clampedGain);
         notifyInputGainChanged();
@@ -27,7 +27,7 @@ void AudioIOManager::setOutputGain (float gain)
 {
     float clampedGain = juce::jlimit (0.0f, 2.0f, gain);
 
-    if (outputGain.load() != clampedGain)
+    if (!juce::approximatelyEqual (outputGain.load(), clampedGain))
     {
         outputGain.store (clampedGain);
         notifyOutputGainChanged();
@@ -70,7 +70,7 @@ void AudioIOManager::processInputGain (juce::AudioBuffer<float>& buffer, bool ap
         // Apply input gain
         float gain = inputGain.load();
 
-        if (gain != 1.0f)
+        if (!juce::approximatelyEqual (gain, 1.0f))
         {
             buffer.applyGain (gain);
         }
@@ -81,7 +81,7 @@ void AudioIOManager::processOutputGain (juce::AudioBuffer<float>& buffer)
 {
     float gain = outputGain.load();
 
-    if (gain != 1.0f)
+    if (!juce::approximatelyEqual (gain, 1.0f))
     {
         buffer.applyGain (gain);
     }

@@ -13,7 +13,7 @@
 #include <juce_core/juce_core.h>
 #include <juce_events/juce_events.h>
 #include <juce_audio_basics/juce_audio_basics.h>
-#include "../PluginHostProcessor.h"
+#include "../Core/PluginHostProcessor.h"
 #include "../Core/AudioIOManager.h"
 #include <chrono>
 #include <iostream>
@@ -126,7 +126,7 @@ private:
 
             for (int i = 0; i < iterations; ++i)
             {
-                manager.applyInputGain (buffer);
+                manager.processInputGain (buffer);
             }
 
             auto end = Clock::now();

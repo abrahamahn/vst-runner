@@ -222,10 +222,6 @@ Contributions are welcome! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) fo
 
 ### Developer Documentation (`docs/dev/`)
 - **[ARCHITECTURE.md](docs/dev/ARCHITECTURE.md)** - Complete architecture documentation and design patterns
-- **[REFACTORING_PHASE2.md](docs/dev/REFACTORING_PHASE2.md)** - Phase 2: Manager pattern refactoring
-- **[REFACTORING_PHASE3.md](docs/dev/REFACTORING_PHASE3.md)** - Phase 3: Modular architecture refactoring
-- **[REFACTORING.md](docs/dev/REFACTORING.md)** - Initial refactoring documentation
-- **[REFACTORING_LOG.md](docs/dev/REFACTORING_LOG.md)** - Detailed refactoring change log
 
 ### Project Documentation (root)
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute to this project

@@ -1,8 +1,8 @@
 #pragma once
 
+#include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_core/juce_core.h>
 #include <juce_events/juce_events.h>
-#include <juce_audio_processors/juce_audio_processors.h>
 
 /**
     Centralized manager for all plugin-related operations.
@@ -34,6 +34,12 @@ public:
     juce::AudioPluginInstance* loadPlugin (const juce::File& pluginPath,
                                            juce::String& errorMessage);
 
+    /** Loads a plugin from the specified file path without capturing the error string.
+        @param pluginPath   The full path to the plugin file
+        @returns           true if the plugin was loaded successfully
+    */
+    bool loadPlugin (const juce::File& pluginPath);
+
     /** Unloads the currently loaded plugin. */
     void unloadPlugin();
 
@@ -43,7 +49,7 @@ public:
     /** Returns the loaded plugin instance, or nullptr if no plugin is loaded. */
     juce::AudioPluginInstance* getLoadedPlugin() const { return loadedPlugin.get(); }
 
-    /** Returns the name of the currently loaded plugin. */
+    /** Returns the name of the currently loaded plugin, or an empty string if none is loaded. */
     juce::String getLoadedPluginName() const;
 
     /** Returns the description of the currently loaded plugin. */
@@ -58,7 +64,7 @@ public:
         @returns           Array of plugin descriptions found
     */
     juce::Array<juce::PluginDescription> scanDirectory (const juce::File& directory,
-                                                         bool recursive = true);
+                                                        bool recursive = true);
 
     /** Validates whether a file is a valid plugin.
         @param pluginPath   The file to validate
@@ -84,13 +90,19 @@ public:
         virtual ~Listener() = default;
 
         /** Called when a plugin is successfully loaded. */
-        virtual void pluginLoaded (const juce::String& pluginName) {}
+        virtual void pluginLoaded (const juce::String& pluginName)
+        {
+            juce::ignoreUnused (pluginName);
+        }
 
         /** Called when a plugin is unloaded. */
         virtual void pluginUnloaded() {}
 
         /** Called when plugin loading fails. */
-        virtual void pluginLoadFailed (const juce::String& errorMessage) {}
+        virtual void pluginLoadFailed (const juce::String& errorMessage)
+        {
+            juce::ignoreUnused (errorMessage);
+        }
     };
 
     void addListener (Listener* listener);
@@ -98,6 +110,8 @@ public:
 
 private:
     //==============================================================================
+    void findPluginDescriptions (const juce::File& pluginPath,
+                                 juce::OwnedArray<juce::PluginDescription>& typesFound);
     void notifyPluginLoaded (const juce::String& name);
     void notifyPluginUnloaded();
     void notifyPluginLoadFailed (const juce::String& error);

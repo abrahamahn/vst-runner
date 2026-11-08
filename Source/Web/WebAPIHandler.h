@@ -1,7 +1,9 @@
 #pragma once
 
-#include <JuceHeader.h>
-#include "../PluginHostProcessor.h"
+#include <juce_audio_devices/juce_audio_devices.h>
+#include <juce_core/juce_core.h>
+
+#include "../Core/PluginHostProcessor.h"
 
 /**
     Handles all web API business logic for controlling VST Runner.
@@ -30,7 +32,7 @@ public:
     /** Unload current plugin */
     juce::String handleUnloadPlugin();
 
-    /** Get audio settings (sample rate, buffer size, etc.) */
+    /** Get audio settings (sample rate, buffer size, gain, etc.) */
     juce::String handleGetAudioSettings();
 
     /** Set input gain (0.0 to 2.0) */
@@ -51,16 +53,14 @@ public:
     //==============================================================================
     // Response Helpers
 
-    /** Create JSON success response */
+    /** Create JSON response payload */
     juce::String jsonResponse (const juce::var& data);
 
-    /** Create JSON error response */
+    /** Create JSON error response payload */
     juce::String errorResponse (const juce::String& message);
 
 private:
     //==============================================================================
-    // Helper methods for data serialization
-
     juce::var createPluginInfoObject();
     juce::var createStatusObject();
     juce::var createAudioSettingsObject();

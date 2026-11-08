@@ -3,21 +3,16 @@
 //==============================================================================
 PluginHostProcessor::PluginHostProcessor()
     : AudioProcessor (BusesProperties()
-                      .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
+                          .withInput ("Input", juce::AudioChannelSet::stereo(), true)
+                          .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
 {
-    // Managers are initialized automatically via member initialization
 }
 
-PluginHostProcessor::~PluginHostProcessor()
-{
-    // Managers are destroyed automatically
-}
+PluginHostProcessor::~PluginHostProcessor() = default;
 
 //==============================================================================
 void PluginHostProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Prepare the loaded plugin if we have one
     if (auto* plugin = pluginManager.getLoadedPlugin())
     {
         plugin->setRateAndBufferSizeDetails (sampleRate, samplesPerBlock);
@@ -35,11 +30,9 @@ void PluginHostProcessor::releaseResources()
 
 bool PluginHostProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
-    // Support stereo input/output
-    const auto& mainInput  = layouts.getMainInputChannelSet();
+    const auto& mainInput = layouts.getMainInputChannelSet();
     const auto& mainOutput = layouts.getMainOutputChannelSet();
 
-    // We support mono or stereo configurations
     if (mainInput != juce::AudioChannelSet::mono()
         && mainInput != juce::AudioChannelSet::stereo())
         return false;
@@ -48,7 +41,6 @@ bool PluginHostProcessor::isBusesLayoutSupported (const BusesLayout& layouts) co
         && mainOutput != juce::AudioChannelSet::stereo())
         return false;
 
-    // Input and output layout must match
     return mainInput == mainOutput;
 }
 
@@ -57,33 +49,26 @@ void PluginHostProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 {
     juce::ScopedNoDenormals noDenormals;
 
-    // If no plugin is loaded, just silence the output
     if (!pluginManager.hasPluginLoaded())
     {
         buffer.clear();
         return;
     }
 
-    // Apply input gain and routing (AudioIOManager handles this)
     audioIOManager.processInputGain (buffer, audioIOManager.isAudioInputEnabled());
-
-    // Process MIDI routing
     audioIOManager.processMidiInput (midiMessages);
 
-    // Process the loaded plugin
     if (auto* plugin = pluginManager.getLoadedPlugin())
     {
         plugin->processBlock (buffer, midiMessages);
     }
 
-    // Apply output gain
     audioIOManager.processOutputGain (buffer);
 }
 
 //==============================================================================
 juce::AudioProcessorEditor* PluginHostProcessor::createEditor()
 {
-    // We don't create our own editor - the MainComponent will handle UI
     return nullptr;
 }
 
@@ -95,7 +80,7 @@ bool PluginHostProcessor::hasEditor() const
 //==============================================================================
 const juce::String PluginHostProcessor::getName() const
 {
-    return JucePlugin_Name;
+    return "VST Runner";
 }
 
 bool PluginHostProcessor::acceptsMidi() const
@@ -103,7 +88,7 @@ bool PluginHostProcessor::acceptsMidi() const
     if (auto* plugin = pluginManager.getLoadedPlugin())
         return plugin->acceptsMidi();
 
-    return true; // Accept MIDI by default
+    return true;
 }
 
 bool PluginHostProcessor::producesMidi() const
@@ -157,101 +142,35 @@ void PluginHostProcessor::changeProgramName (int index, const juce::String& newN
 //==============================================================================
 void PluginHostProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // Save the current plugin state using PluginManager
     pluginManager.savePluginState (destData);
 }
 
 void PluginHostProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // Restore plugin state using PluginManager
     pluginManager.restorePluginState (data, sizeInBytes);
 }
 
 //==============================================================================
-// Legacy compatibility methods (delegate to managers)
-
-bool PluginHostProcessor::loadPlugin (const juce::File& pluginPath)
+bool PluginHostProcessor::loadPlugin (const juce::File& pluginPath, juce::String& errorMessage)
 {
-    juce::String errorMessage;
     auto* plugin = pluginManager.loadPlugin (pluginPath, errorMessage);
 
     if (plugin == nullptr)
-    {
-        juce::AlertWindow::showMessageBoxAsync (
-            juce::AlertWindow::WarningIcon,
-            "Plugin Load Failed",
-            errorMessage);
         return false;
-    }
 
-    // Prepare the plugin with current audio settings
-    if (getSampleRate() > 0)
+    if (getSampleRate() > 0.0)
     {
+        plugin->setRateAndBufferSizeDetails (getSampleRate(), getBlockSize());
         plugin->prepareToPlay (getSampleRate(), getBlockSize());
     }
 
-    // Enable all available buses on the plugin
     plugin->enableAllBuses();
 
     return true;
 }
 
-void PluginHostProcessor::unloadPlugin()
+bool PluginHostProcessor::loadPlugin (const juce::File& pluginPath)
 {
-    pluginManager.unloadPlugin();
-}
-
-bool PluginHostProcessor::hasPluginLoaded() const
-{
-    return pluginManager.hasPluginLoaded();
-}
-
-juce::AudioPluginInstance* PluginHostProcessor::getLoadedPlugin() const
-{
-    return pluginManager.getLoadedPlugin();
-}
-
-juce::String PluginHostProcessor::getLoadedPluginName() const
-{
-    return pluginManager.getLoadedPluginName();
-}
-
-void PluginHostProcessor::setInputGain (float gain)
-{
-    audioIOManager.setInputGain (gain);
-}
-
-void PluginHostProcessor::setOutputGain (float gain)
-{
-    audioIOManager.setOutputGain (gain);
-}
-
-float PluginHostProcessor::getInputGain() const
-{
-    return audioIOManager.getInputGain();
-}
-
-float PluginHostProcessor::getOutputGain() const
-{
-    return audioIOManager.getOutputGain();
-}
-
-void PluginHostProcessor::setAudioInputEnabled (bool enabled)
-{
-    audioIOManager.setAudioInputEnabled (enabled);
-}
-
-bool PluginHostProcessor::isAudioInputEnabled() const
-{
-    return audioIOManager.isAudioInputEnabled();
-}
-
-void PluginHostProcessor::setMidiInputEnabled (bool enabled)
-{
-    audioIOManager.setMidiInputEnabled (enabled);
-}
-
-bool PluginHostProcessor::isMidiInputEnabled() const
-{
-    return audioIOManager.isMidiInputEnabled();
+    juce::String errorMessage;
+    return loadPlugin (pluginPath, errorMessage);
 }

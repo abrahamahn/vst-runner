@@ -1,7 +1,7 @@
 #pragma once
 
-#include <JuceHeader.h>
 #include <functional>
+#include <juce_gui_basics/juce_gui_basics.h>
 
 /**
     UI panel for plugin control operations.

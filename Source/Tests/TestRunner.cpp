@@ -101,17 +101,27 @@ public:
             runner.runAllTests();
         }
 
+        int failedTests = 0;
+        for (int i = 0; i < runner.getNumResults(); ++i)
+        {
+            if (const auto* result = runner.getResult (i))
+            {
+                if (result->failures > 0)
+                    ++failedTests;
+            }
+        }
+
         // Print summary
         std::cout << "\n";
         std::cout << "========================================\n";
         std::cout << "  Test Results Summary\n";
         std::cout << "========================================\n";
         std::cout << "Tests run:    " << runner.getNumResults() << "\n";
-        std::cout << "Passed:       " << (runner.getNumResults() - runner.getNumFailures()) << "\n";
-        std::cout << "Failed:       " << runner.getNumFailures() << "\n";
+        std::cout << "Passed:       " << (runner.getNumResults() - failedTests) << "\n";
+        std::cout << "Failed:       " << failedTests << "\n";
         std::cout << "\n";
 
-        if (runner.getNumFailures() > 0)
+        if (failedTests > 0)
         {
             std::cout << "FAILED - Some tests did not pass.\n";
             setApplicationReturnValue (1);

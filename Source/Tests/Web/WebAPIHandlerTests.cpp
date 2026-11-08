@@ -1,6 +1,8 @@
-#include <JuceHeader.h>
+#include <juce_audio_devices/juce_audio_devices.h>
+#include <juce_core/juce_core.h>
+
+#include "../../Core/PluginHostProcessor.h"
 #include "../../Web/WebAPIHandler.h"
-#include "../../PluginHostProcessor.h"
 
 /**
  * Unit tests for WebAPIHandler
@@ -22,39 +24,33 @@ public:
     {
         beginTest ("JSON Response Formatting");
         {
-            // Create test objects
             auto processor = std::make_unique<PluginHostProcessor>();
             juce::AudioDeviceManager deviceManager;
-            deviceManager.initialiseWithDefaultDevices (0, 2);
 
             WebAPIHandler handler (processor.get(), &deviceManager);
 
-            // Test JSON response with simple data
-            juce::var testData;
+            juce::var testData (new juce::DynamicObject());
             testData.getDynamicObject()->setProperty ("test", "value");
             testData.getDynamicObject()->setProperty ("number", 42);
 
             juce::String response = handler.jsonResponse (testData);
 
-            // Verify it's valid JSON
             auto parsedResponse = juce::JSON::parse (response);
             expect (parsedResponse.isObject(), "Response should be valid JSON object");
             expect (parsedResponse["test"].toString() == "value", "Should contain test property");
-            expect ((int)parsedResponse["number"] == 42, "Should contain number property");
+            expect ((int) parsedResponse["number"] == 42, "Should contain number property");
         }
 
         beginTest ("Error Response Formatting");
         {
             auto processor = std::make_unique<PluginHostProcessor>();
             juce::AudioDeviceManager deviceManager;
-            deviceManager.initialiseWithDefaultDevices (0, 2);
 
             WebAPIHandler handler (processor.get(), &deviceManager);
 
             juce::String errorMsg = "Test error message";
             juce::String response = handler.errorResponse (errorMsg);
 
-            // Parse and verify error response
             auto parsedResponse = juce::JSON::parse (response);
             expect (parsedResponse.isObject(), "Error response should be valid JSON object");
             expect (parsedResponse.hasProperty ("error"), "Should have error property");
@@ -65,7 +61,6 @@ public:
         {
             auto processor = std::make_unique<PluginHostProcessor>();
             juce::AudioDeviceManager deviceManager;
-            deviceManager.initialiseWithDefaultDevices (0, 2);
 
             WebAPIHandler handler (processor.get(), &deviceManager);
 
@@ -74,7 +69,7 @@ public:
 
             expect (parsedResponse.isObject(), "Status response should be valid JSON");
             expect (parsedResponse.hasProperty ("pluginLoaded"), "Should have pluginLoaded property");
-            expect (!(bool)parsedResponse["pluginLoaded"], "Plugin should not be loaded");
+            expect (!(bool) parsedResponse["pluginLoaded"], "Plugin should not be loaded");
             expect (parsedResponse["pluginName"].toString().isEmpty(), "Plugin name should be empty");
         }
 
@@ -82,7 +77,6 @@ public:
         {
             auto processor = std::make_unique<PluginHostProcessor>();
             juce::AudioDeviceManager deviceManager;
-            deviceManager.initialiseWithDefaultDevices (0, 2);
 
             WebAPIHandler handler (processor.get(), &deviceManager);
 
@@ -95,22 +89,19 @@ public:
             expect (parsedResponse.hasProperty ("audioInputEnabled"), "Should have audioInputEnabled property");
             expect (parsedResponse.hasProperty ("midiInputEnabled"), "Should have midiInputEnabled property");
 
-            // Verify default values
-            expect ((float)parsedResponse["inputGain"] == 1.0f, "Default input gain should be 1.0");
-            expect ((float)parsedResponse["outputGain"] == 1.0f, "Default output gain should be 1.0");
-            expect ((bool)parsedResponse["audioInputEnabled"] == true, "Audio input should be enabled by default");
-            expect ((bool)parsedResponse["midiInputEnabled"] == true, "MIDI input should be enabled by default");
+            expectWithinAbsoluteError ((float) parsedResponse["inputGain"], 1.0f, 0.0001f, "Default input gain should be 1.0");
+            expectWithinAbsoluteError ((float) parsedResponse["outputGain"], 1.0f, 0.0001f, "Default output gain should be 1.0");
+            expect ((bool) parsedResponse["audioInputEnabled"] == true, "Audio input should be enabled by default");
+            expect ((bool) parsedResponse["midiInputEnabled"] == true, "MIDI input should be enabled by default");
         }
 
         beginTest ("Set Input Gain - Valid Range");
         {
             auto processor = std::make_unique<PluginHostProcessor>();
             juce::AudioDeviceManager deviceManager;
-            deviceManager.initialiseWithDefaultDevices (0, 2);
 
             WebAPIHandler handler (processor.get(), &deviceManager);
 
-            // Test valid gain values
             float testGains[] = { 0.0f, 0.5f, 1.0f, 1.5f, 2.0f };
 
             for (float gain : testGains)
@@ -120,10 +111,10 @@ public:
 
                 expect (parsedResponse.isObject(), "Response should be valid JSON");
                 expect (parsedResponse.hasProperty ("success"), "Should have success property");
-                expect ((bool)parsedResponse["success"], "Should succeed for valid gain");
+                expect ((bool) parsedResponse["success"], "Should succeed for valid gain");
 
-                // Verify the gain was actually set
-                expect (processor->getInputGain() == gain, "Input gain should be set correctly");
+                expectWithinAbsoluteError (processor->getAudioIOManager().getInputGain(), gain, 0.0001f,
+                                           "Input gain should be set correctly");
             }
         }
 
@@ -131,72 +122,68 @@ public:
         {
             auto processor = std::make_unique<PluginHostProcessor>();
             juce::AudioDeviceManager deviceManager;
-            deviceManager.initialiseWithDefaultDevices (0, 2);
 
             WebAPIHandler handler (processor.get(), &deviceManager);
 
-            // Test setting output gain
             float testGain = 1.5f;
             juce::String response = handler.handleSetOutputGain (testGain);
             auto parsedResponse = juce::JSON::parse (response);
 
             expect (parsedResponse.isObject(), "Response should be valid JSON");
             expect (parsedResponse.hasProperty ("success"), "Should have success property");
-            expect ((bool)parsedResponse["success"], "Should succeed for valid gain");
-            expect (processor->getOutputGain() == testGain, "Output gain should be set correctly");
+            expect ((bool) parsedResponse["success"], "Should succeed for valid gain");
+            expectWithinAbsoluteError (processor->getAudioIOManager().getOutputGain(), testGain, 0.0001f,
+                                       "Output gain should be set correctly");
         }
 
         beginTest ("Set Audio Input Enable/Disable");
         {
             auto processor = std::make_unique<PluginHostProcessor>();
             juce::AudioDeviceManager deviceManager;
-            deviceManager.initialiseWithDefaultDevices (0, 2);
 
             WebAPIHandler handler (processor.get(), &deviceManager);
 
-            // Test disabling audio input
             juce::String response = handler.handleSetAudioInput (false);
             auto parsedResponse = juce::JSON::parse (response);
 
-            expect ((bool)parsedResponse["success"], "Should succeed");
-            expect (!processor->isAudioInputEnabled(), "Audio input should be disabled");
+            expect ((bool) parsedResponse["success"], "Should succeed");
+            expect (!processor->getAudioIOManager().isAudioInputEnabled(),
+                    "Audio input should be disabled");
 
-            // Test enabling audio input
             response = handler.handleSetAudioInput (true);
             parsedResponse = juce::JSON::parse (response);
 
-            expect ((bool)parsedResponse["success"], "Should succeed");
-            expect (processor->isAudioInputEnabled(), "Audio input should be enabled");
+            expect ((bool) parsedResponse["success"], "Should succeed");
+            expect (processor->getAudioIOManager().isAudioInputEnabled(),
+                    "Audio input should be enabled");
         }
 
         beginTest ("Set MIDI Input Enable/Disable");
         {
             auto processor = std::make_unique<PluginHostProcessor>();
             juce::AudioDeviceManager deviceManager;
-            deviceManager.initialiseWithDefaultDevices (0, 2);
 
             WebAPIHandler handler (processor.get(), &deviceManager);
 
-            // Test disabling MIDI input
             juce::String response = handler.handleSetMidiInput (false);
             auto parsedResponse = juce::JSON::parse (response);
 
-            expect ((bool)parsedResponse["success"], "Should succeed");
-            expect (!processor->isMidiInputEnabled(), "MIDI input should be disabled");
+            expect ((bool) parsedResponse["success"], "Should succeed");
+            expect (!processor->getAudioIOManager().isMidiInputEnabled(),
+                    "MIDI input should be disabled");
 
-            // Test enabling MIDI input
             response = handler.handleSetMidiInput (true);
             parsedResponse = juce::JSON::parse (response);
 
-            expect ((bool)parsedResponse["success"], "Should succeed");
-            expect (processor->isMidiInputEnabled(), "MIDI input should be enabled");
+            expect ((bool) parsedResponse["success"], "Should succeed");
+            expect (processor->getAudioIOManager().isMidiInputEnabled(),
+                    "MIDI input should be enabled");
         }
 
         beginTest ("Get Plugin Info - No Plugin");
         {
             auto processor = std::make_unique<PluginHostProcessor>();
             juce::AudioDeviceManager deviceManager;
-            deviceManager.initialiseWithDefaultDevices (0, 2);
 
             WebAPIHandler handler (processor.get(), &deviceManager);
 
@@ -205,14 +192,13 @@ public:
 
             expect (parsedResponse.isObject(), "Response should be valid JSON");
             expect (parsedResponse.hasProperty ("loaded"), "Should have loaded property");
-            expect (!(bool)parsedResponse["loaded"], "Should indicate no plugin loaded");
+            expect (!(bool) parsedResponse["loaded"], "Should indicate no plugin loaded");
         }
 
         beginTest ("Unload Plugin - No Plugin Loaded");
         {
             auto processor = std::make_unique<PluginHostProcessor>();
             juce::AudioDeviceManager deviceManager;
-            deviceManager.initialiseWithDefaultDevices (0, 2);
 
             WebAPIHandler handler (processor.get(), &deviceManager);
 
@@ -220,7 +206,6 @@ public:
             auto parsedResponse = juce::JSON::parse (response);
 
             expect (parsedResponse.isObject(), "Response should be valid JSON");
-            // Should succeed even if no plugin is loaded
             expect (parsedResponse.hasProperty ("success"), "Should have success property");
         }
 
@@ -228,7 +213,6 @@ public:
         {
             auto processor = std::make_unique<PluginHostProcessor>();
             juce::AudioDeviceManager deviceManager;
-            deviceManager.initialiseWithDefaultDevices (0, 2);
 
             WebAPIHandler handler (processor.get(), &deviceManager);
 
@@ -237,20 +221,18 @@ public:
 
             expect (parsedResponse.isObject(), "Response should be valid JSON");
             expect (parsedResponse.hasProperty ("success"), "Should have success property");
-            expect (!(bool)parsedResponse["success"], "Should fail for invalid plugin path");
+            expect (!(bool) parsedResponse["success"], "Should fail for invalid plugin path");
         }
 
         beginTest ("Scan Plugins - Empty Directory");
         {
             auto processor = std::make_unique<PluginHostProcessor>();
             juce::AudioDeviceManager deviceManager;
-            deviceManager.initialiseWithDefaultDevices (0, 2);
 
             WebAPIHandler handler (processor.get(), &deviceManager);
 
-            // Create a temporary empty directory for testing
             juce::File tempDir = juce::File::getSpecialLocation (juce::File::tempDirectory)
-                                    .getChildFile ("vst_runner_test_empty");
+                                     .getChildFile ("vst_runner_test_empty");
             tempDir.createDirectory();
 
             juce::String response = handler.handleScanPlugins (tempDir.getFullPathName());
@@ -260,11 +242,9 @@ public:
             expect (parsedResponse.hasProperty ("plugins"), "Should have plugins array");
             expect (parsedResponse["plugins"].isArray(), "Plugins should be an array");
 
-            // Clean up
             tempDir.deleteRecursively();
         }
     }
 };
 
-// Register the test
 static WebAPIHandlerTests webAPIHandlerTests;

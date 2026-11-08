@@ -17,7 +17,7 @@ WebServerPanel::WebServerPanel()
     // Setup web server status label
     webServerLabel.setText ("Web server: Stopped", juce::dontSendNotification);
     webServerLabel.setJustificationType (juce::Justification::centred);
-    webServerLabel.setFont (juce::Font (11.0f));
+    webServerLabel.setFont (juce::Font (juce::FontOptions (11.0f)));
     webServerLabel.setColour (juce::Label::textColourId, juce::Colours::grey);
     addAndMakeVisible (webServerLabel);
 }

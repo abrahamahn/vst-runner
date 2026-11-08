@@ -1,21 +1,19 @@
 #pragma once
 
-#include <JuceHeader.h>
-#include "Core/PluginManager.h"
-#include "Core/AudioIOManager.h"
+#include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_core/juce_core.h>
+
+#include "AudioIOManager.h"
+#include "PluginManager.h"
 
 //==============================================================================
 /**
     Audio processor that hosts a single VST/VST3 plugin and manages audio/MIDI I/O.
 
-    This class has been refactored to use:
-    - PluginManager for plugin loading/management
-    - AudioIOManager for audio/MIDI routing and gain control
-
     Responsibilities:
     - Audio processing pipeline
     - Integration with JUCE audio callback
-    - Coordination between managers and audio thread
+    - Coordination between PluginManager, AudioIOManager, and audio thread
 */
 class PluginHostProcessor : public juce::AudioProcessor
 {
@@ -30,6 +28,7 @@ public:
 
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
 
+    using juce::AudioProcessor::processBlock;
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
     //==============================================================================
@@ -56,56 +55,23 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     //==============================================================================
+    /** Loads a plugin and prepares it with the host processor's sample rate and block size. */
+    bool loadPlugin (const juce::File& pluginPath, juce::String& errorMessage);
+
+    /** Loads a plugin and prepares it with the host processor's sample rate and block size. */
+    bool loadPlugin (const juce::File& pluginPath);
+
+    //==============================================================================
     // Access to managers
 
     PluginManager& getPluginManager() { return pluginManager; }
+    const PluginManager& getPluginManager() const { return pluginManager; }
+
     AudioIOManager& getAudioIOManager() { return audioIOManager; }
-
-    //==============================================================================
-    // Legacy compatibility methods (delegate to managers)
-
-    /** @deprecated Use getPluginManager().loadPlugin() instead */
-    bool loadPlugin (const juce::File& pluginPath);
-
-    /** @deprecated Use getPluginManager().unloadPlugin() instead */
-    void unloadPlugin();
-
-    /** @deprecated Use getPluginManager().hasPluginLoaded() instead */
-    bool hasPluginLoaded() const;
-
-    /** @deprecated Use getPluginManager().getLoadedPlugin() instead */
-    juce::AudioPluginInstance* getLoadedPlugin() const;
-
-    /** @deprecated Use getPluginManager().getLoadedPluginName() instead */
-    juce::String getLoadedPluginName() const;
-
-    /** @deprecated Use getAudioIOManager().setInputGain() instead */
-    void setInputGain (float gain);
-
-    /** @deprecated Use getAudioIOManager().setOutputGain() instead */
-    void setOutputGain (float gain);
-
-    /** @deprecated Use getAudioIOManager().getInputGain() instead */
-    float getInputGain() const;
-
-    /** @deprecated Use getAudioIOManager().getOutputGain() instead */
-    float getOutputGain() const;
-
-    /** @deprecated Use getAudioIOManager().setAudioInputEnabled() instead */
-    void setAudioInputEnabled (bool enabled);
-
-    /** @deprecated Use getAudioIOManager().isAudioInputEnabled() instead */
-    bool isAudioInputEnabled() const;
-
-    /** @deprecated Use getAudioIOManager().setMidiInputEnabled() instead */
-    void setMidiInputEnabled (bool enabled);
-
-    /** @deprecated Use getAudioIOManager().isMidiInputEnabled() instead */
-    bool isMidiInputEnabled() const;
+    const AudioIOManager& getAudioIOManager() const { return audioIOManager; }
 
 private:
     //==============================================================================
-    // Managers (composition over inheritance)
     PluginManager pluginManager;
     AudioIOManager audioIOManager;
 

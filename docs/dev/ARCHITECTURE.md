@@ -619,6 +619,4 @@ The current architecture supports these extensions:
 ## References
 
 - [JUCE Framework Documentation](https://juce.com/learn/documentation)
-- [REFACTORING_PHASE2.md](REFACTORING_PHASE2.md) - Manager Pattern details
-- [REFACTORING_PHASE3.md](REFACTORING_PHASE3.md) - Modular architecture details
-- [WEB_INTERFACE.md](WEB_INTERFACE.md) - Web API specification
+- [WEB_INTERFACE.md](../manual/WEB_INTERFACE.md) - Web API specification

@@ -81,16 +81,16 @@ public:
         virtual ~Listener() = default;
 
         /** Called when input gain changes. */
-        virtual void inputGainChanged (float newGain) {}
+        virtual void inputGainChanged (float newGain) { juce::ignoreUnused (newGain); }
 
         /** Called when output gain changes. */
-        virtual void outputGainChanged (float newGain) {}
+        virtual void outputGainChanged (float newGain) { juce::ignoreUnused (newGain); }
 
         /** Called when audio input enabled state changes. */
-        virtual void audioInputStateChanged (bool enabled) {}
+        virtual void audioInputStateChanged (bool enabled) { juce::ignoreUnused (enabled); }
 
         /** Called when MIDI input enabled state changes. */
-        virtual void midiInputStateChanged (bool enabled) {}
+        virtual void midiInputStateChanged (bool enabled) { juce::ignoreUnused (enabled); }
     };
 
     void addListener (Listener* listener);

@@ -1,4 +1,6 @@
-#include <JuceHeader.h>
+#include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_core/juce_core.h>
+
 #include "../../Core/PluginManager.h"
 
 /**
@@ -8,10 +10,8 @@
  * - Initial state
  * - Plugin lifecycle
  * - Invalid plugin handling
- * - Observer notifications
+ * - Listener notifications
  * - Edge cases
- *
- * Note: Full plugin loading tests require actual VST plugins
  */
 class PluginManagerTests : public juce::UnitTest
 {
@@ -33,7 +33,6 @@ public:
         {
             PluginManager manager;
 
-            // Try to load non-existent file
             juce::File invalidFile ("/nonexistent/path/plugin.vst3");
 
             bool result = manager.loadPlugin (invalidFile);
@@ -47,7 +46,6 @@ public:
         {
             PluginManager manager;
 
-            // Try to load a directory (not a valid plugin file)
             juce::File directory = juce::File::getSpecialLocation (juce::File::tempDirectory);
 
             bool result = manager.loadPlugin (directory);
@@ -60,9 +58,8 @@ public:
         {
             PluginManager manager;
 
-            // Create a temporary file with wrong extension
             juce::File tempFile = juce::File::getSpecialLocation (juce::File::tempDirectory)
-                                    .getChildFile ("test_invalid.txt");
+                                      .getChildFile ("test_invalid.txt");
             tempFile.create();
             tempFile.appendText ("This is not a plugin");
 
@@ -71,7 +68,6 @@ public:
             expect (!result, "Loading non-plugin file should fail");
             expect (!manager.hasPluginLoaded(), "No plugin should be loaded");
 
-            // Clean up
             tempFile.deleteFile();
         }
 
@@ -79,7 +75,6 @@ public:
         {
             PluginManager manager;
 
-            // Should not crash when unloading with no plugin loaded
             manager.unloadPlugin();
 
             expect (!manager.hasPluginLoaded(), "No plugin should be loaded");
@@ -92,7 +87,6 @@ public:
 
             juce::File invalidFile ("/test/plugin.vst3");
 
-            // Try loading same file multiple times
             for (int i = 0; i < 5; ++i)
             {
                 bool result = manager.loadPlugin (invalidFile);
@@ -105,16 +99,13 @@ public:
         {
             PluginManager manager;
 
-            // Try to load invalid plugin
             juce::File invalidFile ("/invalid/path/plugin.dll");
             manager.loadPlugin (invalidFile);
 
-            // Verify clean state
             expect (!manager.hasPluginLoaded(), "hasPluginLoaded should be false");
             expect (manager.getLoadedPluginName().isEmpty(), "Plugin name should be empty");
             expect (manager.getLoadedPlugin() == nullptr, "Plugin pointer should be null");
 
-            // Should be able to attempt another load
             juce::File anotherFile ("/another/invalid/plugin.vst3");
             manager.loadPlugin (anotherFile);
 
@@ -125,128 +116,120 @@ public:
         {
             PluginManager manager;
 
-            juce::String name = manager.getLoadedPluginName();
+            juce::String pluginName = manager.getLoadedPluginName();
 
-            expect (name.isEmpty(), "Plugin name should be empty when no plugin loaded");
-            expect (name == "", "Plugin name should be empty string");
+            expect (pluginName.isEmpty(), "Plugin name should be empty when no plugin loaded");
+            expect (pluginName == "", "Plugin name should be empty string");
         }
 
-        beginTest ("Observer Notification - Plugin State Change");
+        beginTest ("Listener Notification - Plugin Load Failure");
         {
             PluginManager manager;
 
-            // Simple observer to track notifications
-            class TestObserver : public PluginManager::Observer
+            class TestListener : public PluginManager::Listener
             {
             public:
-                int notificationCount = 0;
+                int failureCount = 0;
 
-                void pluginStateChanged() override
+                void pluginLoadFailed (const juce::String& errorMessage) override
                 {
-                    ++notificationCount;
+                    if (errorMessage.isNotEmpty())
+                        ++failureCount;
                 }
             };
 
-            TestObserver observer;
-            manager.addObserver (&observer);
+            TestListener listener;
+            manager.addListener (&listener);
 
-            // Load invalid plugin (should still trigger notification)
             juce::File invalidFile ("/test/plugin.vst3");
             manager.loadPlugin (invalidFile);
 
-            // Note: Notification behavior depends on implementation
-            // Some implementations only notify on successful load
-            // Others notify on any load attempt
+            expect (listener.failureCount == 1, "Listener should receive load failure notification");
 
-            manager.removeObserver (&observer);
-
-            // Verify observer was removed (no crash on next operation)
+            manager.removeListener (&listener);
             manager.unloadPlugin();
         }
 
-        beginTest ("Multiple Observers");
+        beginTest ("Multiple Listeners");
         {
             PluginManager manager;
 
-            class CountingObserver : public PluginManager::Observer
+            class CountingListener : public PluginManager::Listener
             {
             public:
                 int count = 0;
-                void pluginStateChanged() override { ++count; }
+                void pluginLoadFailed (const juce::String& errorMessage) override
+                {
+                    juce::ignoreUnused (errorMessage);
+                    ++count;
+                }
             };
 
-            CountingObserver observer1, observer2, observer3;
+            CountingListener listener1, listener2, listener3;
 
-            manager.addObserver (&observer1);
-            manager.addObserver (&observer2);
-            manager.addObserver (&observer3);
+            manager.addListener (&listener1);
+            manager.addListener (&listener2);
+            manager.addListener (&listener3);
 
-            // Trigger a state change
-            manager.unloadPlugin();
+            juce::File invalidFile ("/test/plugin.vst3");
+            manager.loadPlugin (invalidFile);
 
-            // Clean up
-            manager.removeObserver (&observer1);
-            manager.removeObserver (&observer2);
-            manager.removeObserver (&observer3);
+            expect (listener1.count == 1 && listener2.count == 1 && listener3.count == 1,
+                    "All listeners should be notified");
+
+            manager.removeListener (&listener1);
+            manager.removeListener (&listener2);
+            manager.removeListener (&listener3);
         }
 
-        beginTest ("Remove Observer - Not Added");
+        beginTest ("Remove Listener - Not Added");
         {
             PluginManager manager;
 
-            class DummyObserver : public PluginManager::Observer
+            class DummyListener : public PluginManager::Listener
             {
-            public:
-                void pluginStateChanged() override {}
             };
 
-            DummyObserver observer;
+            DummyListener listener;
+            manager.removeListener (&listener);
 
-            // Should not crash when removing observer that wasn't added
-            manager.removeObserver (&observer);
-
-            expect (true, "Should handle removing non-existent observer");
+            expect (true, "Should handle removing non-existent listener");
         }
 
-        beginTest ("Concurrent Observer Management");
+        beginTest ("Concurrent Listener Management");
         {
             PluginManager manager;
 
-            class SafeObserver : public PluginManager::Observer
+            class SafeListener : public PluginManager::Listener
             {
             public:
-                std::atomic<int> count {0};
-                void pluginStateChanged() override { ++count; }
+                std::atomic<int> count { 0 };
+                void pluginUnloaded() override { ++count; }
             };
 
-            SafeObserver observer;
+            SafeListener listener;
 
-            // Add and remove observer multiple times
             for (int i = 0; i < 10; ++i)
             {
-                manager.addObserver (&observer);
-                manager.removeObserver (&observer);
+                manager.addListener (&listener);
+                manager.removeListener (&listener);
             }
 
-            expect (true, "Should handle concurrent add/remove");
+            expect (true, "Should handle add/remove cycles");
         }
 
         beginTest ("Plugin Manager Destruction");
         {
-            // Create manager in scope
             {
                 PluginManager manager;
 
-                class TestObserver : public PluginManager::Observer
+                class TestListener : public PluginManager::Listener
                 {
-                public:
-                    void pluginStateChanged() override {}
                 };
 
-                TestObserver observer;
-                manager.addObserver (&observer);
-
-                // Manager should clean up properly when destroyed
+                TestListener listener;
+                manager.addListener (&listener);
+                manager.removeListener (&listener);
             }
 
             expect (true, "Manager should destroy cleanly");
@@ -254,5 +237,4 @@ public:
     }
 };
 
-// Register the test
 static PluginManagerTests pluginManagerTests;

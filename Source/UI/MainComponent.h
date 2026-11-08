@@ -5,7 +5,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_devices/juce_audio_devices.h>
 #include <juce_audio_utils/juce_audio_utils.h>
-#include "../PluginHostProcessor.h"
+#include "../Core/PluginHostProcessor.h"
 #include "AudioSettingsComponent.h"
 #include "PluginControlPanel.h"
 #include "AudioControlPanel.h"
