@@ -20,32 +20,32 @@ public:
     ~AudioControlPanel() override;
 
     //==============================================================================
-    void paint (juce::Graphics&) override;
+    void paint( juce::Graphics& ) override;
     void resized() override;
 
     //==============================================================================
     // Callbacks (set by parent component)
 
     std::function<void()> onOpenAudioSettings;
-    std::function<void(float)> onInputGainChanged;
-    std::function<void(float)> onOutputGainChanged;
-    std::function<void(bool)> onAudioInputToggled;
-    std::function<void(bool)> onMidiInputToggled;
+    std::function<void( float )> onInputGainChanged;
+    std::function<void( float )> onOutputGainChanged;
+    std::function<void( bool )> onAudioInputToggled;
+    std::function<void( bool )> onMidiInputToggled;
 
     //==============================================================================
     // Update methods (called by parent)
 
     /** Set input gain slider value */
-    void setInputGain (float gain);
+    void setInputGain( float gain );
 
     /** Set output gain slider value */
-    void setOutputGain (float gain);
+    void setOutputGain( float gain );
 
     /** Set audio input toggle state */
-    void setAudioInputEnabled (bool enabled);
+    void setAudioInputEnabled( bool enabled );
 
     /** Set MIDI input toggle state */
-    void setMidiInputEnabled (bool enabled);
+    void setMidiInputEnabled( bool enabled );
 
 private:
     //==============================================================================
@@ -64,5 +64,5 @@ private:
     juce::ToggleButton audioInputToggle;
     juce::ToggleButton midiInputToggle;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioControlPanel)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR( AudioControlPanel )
 };

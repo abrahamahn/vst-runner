@@ -1,38 +1,36 @@
 #include "AudioSettingsComponent.h"
 
 //==============================================================================
-AudioSettingsComponent::AudioSettingsComponent (juce::AudioDeviceManager& deviceManager)
-    : audioDeviceManager (deviceManager)
+AudioSettingsComponent::AudioSettingsComponent( juce::AudioDeviceManager& deviceManager )
+    : audioDeviceManager( deviceManager )
 {
     // Create the audio device selector with all input/output options
-    audioSetupComp.reset (new juce::AudioDeviceSelectorComponent (
+    audioSetupComp.reset( new juce::AudioDeviceSelectorComponent(
         audioDeviceManager,
-        0,     // minimum input channels
-        256,   // maximum input channels
-        0,     // minimum output channels
-        256,   // maximum output channels
-        true,  // show MIDI input options
-        true,  // show MIDI output selector
-        true,  // show channels as stereo pairs
-        false  // hide advanced options with button
-    ));
+        0,    // minimum input channels
+        256,  // maximum input channels
+        0,    // minimum output channels
+        256,  // maximum output channels
+        true, // show MIDI input options
+        true, // show MIDI output selector
+        true, // show channels as stereo pairs
+        false // hide advanced options with button
+        ) );
 
-    addAndMakeVisible (audioSetupComp.get());
+    addAndMakeVisible( audioSetupComp.get() );
 
-    setSize (500, 450);
+    setSize( 500, 450 );
 }
 
-AudioSettingsComponent::~AudioSettingsComponent()
-{
-}
+AudioSettingsComponent::~AudioSettingsComponent() {}
 
 //==============================================================================
-void AudioSettingsComponent::paint (juce::Graphics& g)
+void AudioSettingsComponent::paint( juce::Graphics& g )
 {
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+    g.fillAll( getLookAndFeel().findColour( juce::ResizableWindow::backgroundColourId ) );
 }
 
 void AudioSettingsComponent::resized()
 {
-    audioSetupComp->setBounds (getLocalBounds().reduced (10));
+    audioSetupComp->setBounds( getLocalBounds().reduced( 10 ) );
 }

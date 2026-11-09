@@ -19,7 +19,7 @@ public:
     ~WebServerPanel() override;
 
     //==============================================================================
-    void paint (juce::Graphics&) override;
+    void paint( juce::Graphics& ) override;
     void resized() override;
 
     //==============================================================================
@@ -32,7 +32,7 @@ public:
     // Update methods (called by parent)
 
     /** Update server status text and button states */
-    void setServerStatus (bool isRunning, const juce::String& statusText);
+    void setServerStatus( bool isRunning, const juce::String& statusText );
 
 private:
     //==============================================================================
@@ -45,5 +45,5 @@ private:
     juce::TextButton openWebButton;
     juce::Label webServerLabel;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WebServerPanel)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR( WebServerPanel )
 };

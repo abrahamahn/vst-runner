@@ -1,7 +1,7 @@
+#include "UI/MainComponent.h"
 #include <juce_core/juce_core.h>
 #include <juce_events/juce_events.h>
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "UI/MainComponent.h"
 
 //==============================================================================
 class VSTRunnerApplication : public juce::JUCEApplication
@@ -10,32 +10,23 @@ public:
     //==============================================================================
     VSTRunnerApplication() {}
 
-    const juce::String getApplicationName() override       { return JUCE_APPLICATION_NAME_STRING; }
-    const juce::String getApplicationVersion() override    { return JUCE_APPLICATION_VERSION_STRING; }
-    bool moreThanOneInstanceAllowed() override             { return true; }
+    const juce::String getApplicationName() override { return JUCE_APPLICATION_NAME_STRING; }
+    const juce::String getApplicationVersion() override { return JUCE_APPLICATION_VERSION_STRING; }
+    bool moreThanOneInstanceAllowed() override { return true; }
 
     //==============================================================================
-    void initialise (const juce::String& commandLine) override
+    void initialise( const juce::String& commandLine ) override
     {
-        juce::ignoreUnused (commandLine);
-        mainWindow = std::make_unique<MainWindow> (getApplicationName());
+        juce::ignoreUnused( commandLine );
+        mainWindow = std::make_unique<MainWindow>( getApplicationName() );
     }
 
-    void shutdown() override
-    {
-        mainWindow = nullptr;
-    }
+    void shutdown() override { mainWindow = nullptr; }
 
     //==============================================================================
-    void systemRequestedQuit() override
-    {
-        quit();
-    }
+    void systemRequestedQuit() override { quit(); }
 
-    void anotherInstanceStarted (const juce::String& commandLine) override
-    {
-        juce::ignoreUnused (commandLine);
-    }
+    void anotherInstanceStarted( const juce::String& commandLine ) override { juce::ignoreUnused( commandLine ); }
 
     //==============================================================================
     /*
@@ -45,23 +36,24 @@ public:
     class MainWindow : public juce::DocumentWindow
     {
     public:
-        MainWindow (juce::String name)
-            : DocumentWindow (name,
-                              juce::Desktop::getInstance().getDefaultLookAndFeel()
-                                  .findColour (juce::ResizableWindow::backgroundColourId),
-                              DocumentWindow::allButtons)
+        MainWindow( juce::String name )
+            : DocumentWindow(
+                  name,
+                  juce::Desktop::getInstance().getDefaultLookAndFeel().findColour(
+                      juce::ResizableWindow::backgroundColourId ),
+                  DocumentWindow::allButtons )
         {
-            setUsingNativeTitleBar (true);
-            setContentOwned (new MainComponent(), true);
+            setUsingNativeTitleBar( true );
+            setContentOwned( new MainComponent(), true );
 
-           #if JUCE_IOS || JUCE_ANDROID
-            setFullScreen (true);
-           #else
-            setResizable (true, true);
-            centreWithSize (getWidth(), getHeight());
-           #endif
+#if JUCE_IOS || JUCE_ANDROID
+            setFullScreen( true );
+#else
+            setResizable( true, true );
+            centreWithSize( getWidth(), getHeight() );
+#endif
 
-            setVisible (true);
+            setVisible( true );
         }
 
         void closeButtonPressed() override
@@ -80,7 +72,7 @@ public:
         */
 
     private:
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR( MainWindow )
     };
 
 private:
@@ -89,4 +81,4 @@ private:
 
 //==============================================================================
 // This macro generates the main() routine that launches the app.
-START_JUCE_APPLICATION (VSTRunnerApplication)
+START_JUCE_APPLICATION( VSTRunnerApplication )

@@ -23,13 +23,13 @@ public:
     ~PluginHostProcessor() override;
 
     //==============================================================================
-    void prepareToPlay (double sampleRate, int samplesPerBlock) override;
+    void prepareToPlay( double sampleRate, int samplesPerBlock ) override;
     void releaseResources() override;
 
-    bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
+    bool isBusesLayoutSupported( const BusesLayout& layouts ) const override;
 
     using juce::AudioProcessor::processBlock;
-    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    void processBlock( juce::AudioBuffer<float>&, juce::MidiBuffer& ) override;
 
     //==============================================================================
     juce::AudioProcessorEditor* createEditor() override;
@@ -46,20 +46,20 @@ public:
     //==============================================================================
     int getNumPrograms() override;
     int getCurrentProgram() override;
-    void setCurrentProgram (int index) override;
-    const juce::String getProgramName (int index) override;
-    void changeProgramName (int index, const juce::String& newName) override;
+    void setCurrentProgram( int index ) override;
+    const juce::String getProgramName( int index ) override;
+    void changeProgramName( int index, const juce::String& newName ) override;
 
     //==============================================================================
-    void getStateInformation (juce::MemoryBlock& destData) override;
-    void setStateInformation (const void* data, int sizeInBytes) override;
+    void getStateInformation( juce::MemoryBlock& destData ) override;
+    void setStateInformation( const void* data, int sizeInBytes ) override;
 
     //==============================================================================
     /** Loads a plugin and prepares it with the host processor's sample rate and block size. */
-    bool loadPlugin (const juce::File& pluginPath, juce::String& errorMessage);
+    bool loadPlugin( const juce::File& pluginPath, juce::String& errorMessage );
 
     /** Loads a plugin and prepares it with the host processor's sample rate and block size. */
-    bool loadPlugin (const juce::File& pluginPath);
+    bool loadPlugin( const juce::File& pluginPath );
 
     //==============================================================================
     // Access to managers
@@ -75,5 +75,5 @@ private:
     PluginManager pluginManager;
     AudioIOManager audioIOManager;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginHostProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR( PluginHostProcessor )
 };

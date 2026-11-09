@@ -14,7 +14,7 @@
 class WebAPIHandler
 {
 public:
-    WebAPIHandler (PluginHostProcessor* processor, juce::AudioDeviceManager* deviceManager);
+    WebAPIHandler( PluginHostProcessor* processor, juce::AudioDeviceManager* deviceManager );
     ~WebAPIHandler();
 
     //==============================================================================
@@ -27,7 +27,7 @@ public:
     juce::String handleGetPluginInfo();
 
     /** Load a VST plugin */
-    juce::String handleLoadPlugin (const juce::String& pluginPath);
+    juce::String handleLoadPlugin( const juce::String& pluginPath );
 
     /** Unload current plugin */
     juce::String handleUnloadPlugin();
@@ -36,28 +36,28 @@ public:
     juce::String handleGetAudioSettings();
 
     /** Set input gain (0.0 to 2.0) */
-    juce::String handleSetInputGain (float gain);
+    juce::String handleSetInputGain( float gain );
 
     /** Set output gain (0.0 to 2.0) */
-    juce::String handleSetOutputGain (float gain);
+    juce::String handleSetOutputGain( float gain );
 
     /** Enable/disable audio input */
-    juce::String handleSetAudioInput (bool enabled);
+    juce::String handleSetAudioInput( bool enabled );
 
     /** Enable/disable MIDI input */
-    juce::String handleSetMidiInput (bool enabled);
+    juce::String handleSetMidiInput( bool enabled );
 
     /** Scan directory for plugins */
-    juce::String handleScanPlugins (const juce::String& directory);
+    juce::String handleScanPlugins( const juce::String& directory );
 
     //==============================================================================
     // Response Helpers
 
     /** Create JSON response payload */
-    juce::String jsonResponse (const juce::var& data);
+    juce::String jsonResponse( const juce::var& data );
 
     /** Create JSON error response payload */
-    juce::String errorResponse (const juce::String& message);
+    juce::String errorResponse( const juce::String& message );
 
 private:
     //==============================================================================
@@ -69,5 +69,5 @@ private:
     PluginHostProcessor* pluginProcessor;
     juce::AudioDeviceManager* audioDeviceManager;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WebAPIHandler)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR( WebAPIHandler )
 };

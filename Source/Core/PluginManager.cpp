@@ -14,25 +14,24 @@ PluginManager::~PluginManager()
 //==============================================================================
 // Plugin loading
 
-void PluginManager::findPluginDescriptions (const juce::File& pluginPath,
-                                            juce::OwnedArray<juce::PluginDescription>& typesFound)
+void PluginManager::findPluginDescriptions(
+    const juce::File& pluginPath, juce::OwnedArray<juce::PluginDescription>& typesFound )
 {
-    for (auto* format : formatManager.getFormats())
+    for ( auto* format : formatManager.getFormats() )
     {
-        format->findAllTypesForFile (typesFound, pluginPath.getFullPathName());
+        format->findAllTypesForFile( typesFound, pluginPath.getFullPathName() );
 
-        if (typesFound.size() > 0)
+        if ( typesFound.size() > 0 )
             break;
     }
 }
 
-juce::AudioPluginInstance* PluginManager::loadPlugin (const juce::File& pluginPath,
-                                                      juce::String& errorMessage)
+juce::AudioPluginInstance* PluginManager::loadPlugin( const juce::File& pluginPath, juce::String& errorMessage )
 {
-    if (!pluginPath.existsAsFile())
+    if ( !pluginPath.existsAsFile() )
     {
         errorMessage = "Plugin file does not exist: " + pluginPath.getFullPathName();
-        notifyPluginLoadFailed (errorMessage);
+        notifyPluginLoadFailed( errorMessage );
         return nullptr;
     }
 
@@ -41,12 +40,12 @@ juce::AudioPluginInstance* PluginManager::loadPlugin (const juce::File& pluginPa
 
     // Try to identify the plugin format and scan it
     juce::OwnedArray<juce::PluginDescription> typesFound;
-    findPluginDescriptions (pluginPath, typesFound);
+    findPluginDescriptions( pluginPath, typesFound );
 
-    if (typesFound.isEmpty())
+    if ( typesFound.isEmpty() )
     {
         errorMessage = "Could not identify plugin format: " + pluginPath.getFullPathName();
-        notifyPluginLoadFailed (errorMessage);
+        notifyPluginLoadFailed( errorMessage );
         return nullptr;
     }
 
@@ -54,36 +53,36 @@ juce::AudioPluginInstance* PluginManager::loadPlugin (const juce::File& pluginPa
     loadedPluginDesc = *typesFound[0];
 
     // Load the plugin
-    loadedPlugin.reset (formatManager
-                            .createPluginInstance (
+    loadedPlugin.reset( formatManager
+                            .createPluginInstance(
                                 loadedPluginDesc,
                                 44100.0, // Default sample rate, will be updated by processor
                                 512,     // Default block size, will be updated by processor
-                                errorMessage)
-                            .release());
+                                errorMessage )
+                            .release() );
 
-    if (loadedPlugin == nullptr)
+    if ( loadedPlugin == nullptr )
     {
         loadedPluginDesc = juce::PluginDescription();
-        notifyPluginLoadFailed (errorMessage);
+        notifyPluginLoadFailed( errorMessage );
         return nullptr;
     }
 
-    DBG ("Successfully loaded plugin: " + loadedPlugin->getName());
-    notifyPluginLoaded (loadedPlugin->getName());
+    DBG( "Successfully loaded plugin: " + loadedPlugin->getName() );
+    notifyPluginLoaded( loadedPlugin->getName() );
 
     return loadedPlugin.get();
 }
 
-bool PluginManager::loadPlugin (const juce::File& pluginPath)
+bool PluginManager::loadPlugin( const juce::File& pluginPath )
 {
     juce::String errorMessage;
-    return loadPlugin (pluginPath, errorMessage) != nullptr;
+    return loadPlugin( pluginPath, errorMessage ) != nullptr;
 }
 
 void PluginManager::unloadPlugin()
 {
-    if (loadedPlugin != nullptr)
+    if ( loadedPlugin != nullptr )
     {
         loadedPlugin.reset();
         loadedPluginDesc = juce::PluginDescription();
@@ -98,7 +97,7 @@ bool PluginManager::hasPluginLoaded() const
 
 juce::String PluginManager::getLoadedPluginName() const
 {
-    if (loadedPlugin != nullptr)
+    if ( loadedPlugin != nullptr )
         return loadedPlugin->getName();
 
     return {};
@@ -112,40 +111,36 @@ juce::PluginDescription PluginManager::getLoadedPluginDescription() const
 //==============================================================================
 // Plugin scanning
 
-juce::Array<juce::PluginDescription> PluginManager::scanDirectory (const juce::File& directory,
-                                                                   bool recursive)
+juce::Array<juce::PluginDescription> PluginManager::scanDirectory( const juce::File& directory, bool recursive )
 {
     juce::Array<juce::PluginDescription> results;
 
-    if (!directory.isDirectory())
+    if ( !directory.isDirectory() )
         return results;
 
-    auto files = directory.findChildFiles (
-        juce::File::findFiles,
-        recursive,
-        "*.dll;*.vst;*.vst3");
+    auto files = directory.findChildFiles( juce::File::findFiles, recursive, "*.dll;*.vst;*.vst3" );
 
-    for (const auto& file : files)
+    for ( const auto& file : files )
     {
         juce::OwnedArray<juce::PluginDescription> typesFound;
-        findPluginDescriptions (file, typesFound);
+        findPluginDescriptions( file, typesFound );
 
-        for (auto* desc : typesFound)
+        for ( auto* desc : typesFound )
         {
-            results.add (*desc);
+            results.add( *desc );
         }
     }
 
     return results;
 }
 
-bool PluginManager::isValidPlugin (const juce::File& pluginPath)
+bool PluginManager::isValidPlugin( const juce::File& pluginPath )
 {
-    if (!pluginPath.existsAsFile())
+    if ( !pluginPath.existsAsFile() )
         return false;
 
     juce::OwnedArray<juce::PluginDescription> typesFound;
-    findPluginDescriptions (pluginPath, typesFound);
+    findPluginDescriptions( pluginPath, typesFound );
 
     return !typesFound.isEmpty();
 }
@@ -153,46 +148,46 @@ bool PluginManager::isValidPlugin (const juce::File& pluginPath)
 //==============================================================================
 // Plugin state
 
-void PluginManager::savePluginState (juce::MemoryBlock& destData)
+void PluginManager::savePluginState( juce::MemoryBlock& destData )
 {
-    if (loadedPlugin != nullptr)
+    if ( loadedPlugin != nullptr )
     {
-        loadedPlugin->getStateInformation (destData);
+        loadedPlugin->getStateInformation( destData );
     }
 }
 
-void PluginManager::restorePluginState (const void* data, int sizeInBytes)
+void PluginManager::restorePluginState( const void* data, int sizeInBytes )
 {
-    if (loadedPlugin != nullptr && data != nullptr && sizeInBytes > 0)
+    if ( loadedPlugin != nullptr && data != nullptr && sizeInBytes > 0 )
     {
-        loadedPlugin->setStateInformation (data, sizeInBytes);
+        loadedPlugin->setStateInformation( data, sizeInBytes );
     }
 }
 
 //==============================================================================
 // Listener management
 
-void PluginManager::addListener (Listener* listener)
+void PluginManager::addListener( Listener* listener )
 {
-    listeners.add (listener);
+    listeners.add( listener );
 }
 
-void PluginManager::removeListener (Listener* listener)
+void PluginManager::removeListener( Listener* listener )
 {
-    listeners.remove (listener);
+    listeners.remove( listener );
 }
 
-void PluginManager::notifyPluginLoaded (const juce::String& name)
+void PluginManager::notifyPluginLoaded( const juce::String& name )
 {
-    listeners.call ([&name] (Listener& l) { l.pluginLoaded (name); });
+    listeners.call( [&name]( Listener& l ) { l.pluginLoaded( name ); } );
 }
 
 void PluginManager::notifyPluginUnloaded()
 {
-    listeners.call ([] (Listener& l) { l.pluginUnloaded(); });
+    listeners.call( []( Listener& l ) { l.pluginUnloaded(); } );
 }
 
-void PluginManager::notifyPluginLoadFailed (const juce::String& error)
+void PluginManager::notifyPluginLoadFailed( const juce::String& error )
 {
-    listeners.call ([&error] (Listener& l) { l.pluginLoadFailed (error); });
+    listeners.call( [&error]( Listener& l ) { l.pluginLoadFailed( error ); } );
 }

@@ -18,11 +18,11 @@ class AudioSettingsComponent : public juce::Component
 {
 public:
     //==============================================================================
-    AudioSettingsComponent (juce::AudioDeviceManager& deviceManager);
+    AudioSettingsComponent( juce::AudioDeviceManager& deviceManager );
     ~AudioSettingsComponent() override;
 
     //==============================================================================
-    void paint (juce::Graphics&) override;
+    void paint( juce::Graphics& ) override;
     void resized() override;
 
 private:
@@ -30,5 +30,5 @@ private:
     juce::AudioDeviceManager& audioDeviceManager;
     std::unique_ptr<juce::AudioDeviceSelectorComponent> audioSetupComp;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioSettingsComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR( AudioSettingsComponent )
 };

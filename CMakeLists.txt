@@ -239,7 +239,6 @@ if(BUILD_TESTS)
     target_compile_definitions(VSTRunnerTests
         PRIVATE
             ${VSTRUNNER_COMPILE_DEFINITIONS}
-            JUCE_UNIT_TESTS=1
     )
 
     target_include_directories(VSTRunnerTests

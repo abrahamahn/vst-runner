@@ -1,16 +1,16 @@
 #pragma once
 
+#include "../Core/PluginHostProcessor.h"
+#include "../Web/WebServer.h"
+#include "AudioControlPanel.h"
+#include "AudioSettingsComponent.h"
+#include "PluginControlPanel.h"
+#include "WebServerPanel.h"
+#include <juce_audio_devices/juce_audio_devices.h>
+#include <juce_audio_utils/juce_audio_utils.h>
 #include <juce_core/juce_core.h>
 #include <juce_events/juce_events.h>
 #include <juce_gui_basics/juce_gui_basics.h>
-#include <juce_audio_devices/juce_audio_devices.h>
-#include <juce_audio_utils/juce_audio_utils.h>
-#include "../Core/PluginHostProcessor.h"
-#include "AudioSettingsComponent.h"
-#include "PluginControlPanel.h"
-#include "AudioControlPanel.h"
-#include "WebServerPanel.h"
-#include "../Web/WebServer.h"
 
 //==============================================================================
 /**
@@ -22,8 +22,7 @@
     - Audio/MIDI I/O toggles
     - Web interface server
 */
-class MainComponent : public juce::Component,
-                      private juce::Timer
+class MainComponent : public juce::Component, private juce::Timer
 {
 public:
     //==============================================================================
@@ -31,7 +30,7 @@ public:
     ~MainComponent() override;
 
     //==============================================================================
-    void paint (juce::Graphics&) override;
+    void paint( juce::Graphics& ) override;
     void resized() override;
 
 private:
@@ -40,7 +39,7 @@ private:
 
     // Callback handlers (called from panels)
     void browseForPlugin();
-    void loadPluginFromPath (const juce::String& path);
+    void loadPluginFromPath( const juce::String& path );
     void openAudioSettings();
     void showPluginEditor();
     void closePluginEditor();
@@ -67,5 +66,5 @@ private:
     std::unique_ptr<juce::DocumentWindow> pluginEditorWindow;
 
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR( MainComponent )
 };

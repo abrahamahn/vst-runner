@@ -1,35 +1,31 @@
 #include "AudioIOManager.h"
 
 //==============================================================================
-AudioIOManager::AudioIOManager()
-{
-}
+AudioIOManager::AudioIOManager() {}
 
-AudioIOManager::~AudioIOManager()
-{
-}
+AudioIOManager::~AudioIOManager() {}
 
 //==============================================================================
 // Gain controls
 
-void AudioIOManager::setInputGain (float gain)
+void AudioIOManager::setInputGain( float gain )
 {
-    float clampedGain = juce::jlimit (0.0f, 2.0f, gain);
+    float clampedGain = juce::jlimit( 0.0f, 2.0f, gain );
 
-    if (!juce::approximatelyEqual (inputGain.load(), clampedGain))
+    if ( !juce::approximatelyEqual( inputGain.load(), clampedGain ) )
     {
-        inputGain.store (clampedGain);
+        inputGain.store( clampedGain );
         notifyInputGainChanged();
     }
 }
 
-void AudioIOManager::setOutputGain (float gain)
+void AudioIOManager::setOutputGain( float gain )
 {
-    float clampedGain = juce::jlimit (0.0f, 2.0f, gain);
+    float clampedGain = juce::jlimit( 0.0f, 2.0f, gain );
 
-    if (!juce::approximatelyEqual (outputGain.load(), clampedGain))
+    if ( !juce::approximatelyEqual( outputGain.load(), clampedGain ) )
     {
-        outputGain.store (clampedGain);
+        outputGain.store( clampedGain );
         notifyOutputGainChanged();
     }
 }
@@ -37,20 +33,20 @@ void AudioIOManager::setOutputGain (float gain)
 //==============================================================================
 // Input routing
 
-void AudioIOManager::setAudioInputEnabled (bool enabled)
+void AudioIOManager::setAudioInputEnabled( bool enabled )
 {
-    if (audioInputEnabled.load() != enabled)
+    if ( audioInputEnabled.load() != enabled )
     {
-        audioInputEnabled.store (enabled);
+        audioInputEnabled.store( enabled );
         notifyAudioInputStateChanged();
     }
 }
 
-void AudioIOManager::setMidiInputEnabled (bool enabled)
+void AudioIOManager::setMidiInputEnabled( bool enabled )
 {
-    if (midiInputEnabled.load() != enabled)
+    if ( midiInputEnabled.load() != enabled )
     {
-        midiInputEnabled.store (enabled);
+        midiInputEnabled.store( enabled );
         notifyMidiInputStateChanged();
     }
 }
@@ -58,9 +54,9 @@ void AudioIOManager::setMidiInputEnabled (bool enabled)
 //==============================================================================
 // Audio processing helpers
 
-void AudioIOManager::processInputGain (juce::AudioBuffer<float>& buffer, bool applyGain)
+void AudioIOManager::processInputGain( juce::AudioBuffer<float>& buffer, bool applyGain )
 {
-    if (!audioInputEnabled.load() || !applyGain)
+    if ( !audioInputEnabled.load() || !applyGain )
     {
         // If audio input is disabled, clear the buffer (feed silence to plugin)
         buffer.clear();
@@ -70,26 +66,26 @@ void AudioIOManager::processInputGain (juce::AudioBuffer<float>& buffer, bool ap
         // Apply input gain
         float gain = inputGain.load();
 
-        if (!juce::approximatelyEqual (gain, 1.0f))
+        if ( !juce::approximatelyEqual( gain, 1.0f ) )
         {
-            buffer.applyGain (gain);
+            buffer.applyGain( gain );
         }
     }
 }
 
-void AudioIOManager::processOutputGain (juce::AudioBuffer<float>& buffer)
+void AudioIOManager::processOutputGain( juce::AudioBuffer<float>& buffer )
 {
     float gain = outputGain.load();
 
-    if (!juce::approximatelyEqual (gain, 1.0f))
+    if ( !juce::approximatelyEqual( gain, 1.0f ) )
     {
-        buffer.applyGain (gain);
+        buffer.applyGain( gain );
     }
 }
 
-void AudioIOManager::processMidiInput (juce::MidiBuffer& midiBuffer)
+void AudioIOManager::processMidiInput( juce::MidiBuffer& midiBuffer )
 {
-    if (!midiInputEnabled.load())
+    if ( !midiInputEnabled.load() )
     {
         // If MIDI input is disabled, clear the buffer
         midiBuffer.clear();
@@ -99,36 +95,36 @@ void AudioIOManager::processMidiInput (juce::MidiBuffer& midiBuffer)
 //==============================================================================
 // Listener management
 
-void AudioIOManager::addListener (Listener* listener)
+void AudioIOManager::addListener( Listener* listener )
 {
-    listeners.add (listener);
+    listeners.add( listener );
 }
 
-void AudioIOManager::removeListener (Listener* listener)
+void AudioIOManager::removeListener( Listener* listener )
 {
-    listeners.remove (listener);
+    listeners.remove( listener );
 }
 
 void AudioIOManager::notifyInputGainChanged()
 {
     float gain = inputGain.load();
-    listeners.call ([gain] (Listener& l) { l.inputGainChanged (gain); });
+    listeners.call( [gain]( Listener& l ) { l.inputGainChanged( gain ); } );
 }
 
 void AudioIOManager::notifyOutputGainChanged()
 {
     float gain = outputGain.load();
-    listeners.call ([gain] (Listener& l) { l.outputGainChanged (gain); });
+    listeners.call( [gain]( Listener& l ) { l.outputGainChanged( gain ); } );
 }
 
 void AudioIOManager::notifyAudioInputStateChanged()
 {
     bool enabled = audioInputEnabled.load();
-    listeners.call ([enabled] (Listener& l) { l.audioInputStateChanged (enabled); });
+    listeners.call( [enabled]( Listener& l ) { l.audioInputStateChanged( enabled ); } );
 }
 
 void AudioIOManager::notifyMidiInputStateChanged()
 {
     bool enabled = midiInputEnabled.load();
-    listeners.call ([enabled] (Listener& l) { l.midiInputStateChanged (enabled); });
+    listeners.call( [enabled]( Listener& l ) { l.midiInputStateChanged( enabled ); } );
 }

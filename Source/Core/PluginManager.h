@@ -31,14 +31,13 @@ public:
         @param errorMessage Output parameter for error details
         @returns           Pointer to loaded plugin, or nullptr on failure
     */
-    juce::AudioPluginInstance* loadPlugin (const juce::File& pluginPath,
-                                           juce::String& errorMessage);
+    juce::AudioPluginInstance* loadPlugin( const juce::File& pluginPath, juce::String& errorMessage );
 
     /** Loads a plugin from the specified file path without capturing the error string.
         @param pluginPath   The full path to the plugin file
         @returns           true if the plugin was loaded successfully
     */
-    bool loadPlugin (const juce::File& pluginPath);
+    bool loadPlugin( const juce::File& pluginPath );
 
     /** Unloads the currently loaded plugin. */
     void unloadPlugin();
@@ -63,23 +62,22 @@ public:
         @param recursive    Whether to scan subdirectories
         @returns           Array of plugin descriptions found
     */
-    juce::Array<juce::PluginDescription> scanDirectory (const juce::File& directory,
-                                                        bool recursive = true);
+    juce::Array<juce::PluginDescription> scanDirectory( const juce::File& directory, bool recursive = true );
 
     /** Validates whether a file is a valid plugin.
         @param pluginPath   The file to validate
         @returns           true if the file is a valid plugin
     */
-    bool isValidPlugin (const juce::File& pluginPath);
+    bool isValidPlugin( const juce::File& pluginPath );
 
     //==============================================================================
     // Plugin state
 
     /** Saves the current plugin state to a memory block. */
-    void savePluginState (juce::MemoryBlock& destData);
+    void savePluginState( juce::MemoryBlock& destData );
 
     /** Restores plugin state from a memory block. */
-    void restorePluginState (const void* data, int sizeInBytes);
+    void restorePluginState( const void* data, int sizeInBytes );
 
     //==============================================================================
     // Listener interface for plugin events
@@ -90,31 +88,24 @@ public:
         virtual ~Listener() = default;
 
         /** Called when a plugin is successfully loaded. */
-        virtual void pluginLoaded (const juce::String& pluginName)
-        {
-            juce::ignoreUnused (pluginName);
-        }
+        virtual void pluginLoaded( const juce::String& pluginName ) { juce::ignoreUnused( pluginName ); }
 
         /** Called when a plugin is unloaded. */
         virtual void pluginUnloaded() {}
 
         /** Called when plugin loading fails. */
-        virtual void pluginLoadFailed (const juce::String& errorMessage)
-        {
-            juce::ignoreUnused (errorMessage);
-        }
+        virtual void pluginLoadFailed( const juce::String& errorMessage ) { juce::ignoreUnused( errorMessage ); }
     };
 
-    void addListener (Listener* listener);
-    void removeListener (Listener* listener);
+    void addListener( Listener* listener );
+    void removeListener( Listener* listener );
 
 private:
     //==============================================================================
-    void findPluginDescriptions (const juce::File& pluginPath,
-                                 juce::OwnedArray<juce::PluginDescription>& typesFound);
-    void notifyPluginLoaded (const juce::String& name);
+    void findPluginDescriptions( const juce::File& pluginPath, juce::OwnedArray<juce::PluginDescription>& typesFound );
+    void notifyPluginLoaded( const juce::String& name );
     void notifyPluginUnloaded();
-    void notifyPluginLoadFailed (const juce::String& error);
+    void notifyPluginLoadFailed( const juce::String& error );
 
     //==============================================================================
     juce::AudioPluginFormatManager formatManager;
@@ -123,5 +114,5 @@ private:
 
     juce::ListenerList<Listener> listeners;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginManager)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR( PluginManager )
 };

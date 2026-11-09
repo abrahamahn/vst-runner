@@ -28,40 +28,40 @@ public:
     //==============================================================================
     // Window settings
 
-    void setWindowBounds (const juce::Rectangle<int>& bounds);
+    void setWindowBounds( const juce::Rectangle<int>& bounds );
     juce::Rectangle<int> getWindowBounds() const;
 
     //==============================================================================
     // Plugin settings
 
-    void setLastPluginPath (const juce::String& path);
+    void setLastPluginPath( const juce::String& path );
     juce::String getLastPluginPath() const;
 
-    void setLastPluginDirectory (const juce::File& directory);
+    void setLastPluginDirectory( const juce::File& directory );
     juce::File getLastPluginDirectory() const;
 
     //==============================================================================
     // Audio settings
 
-    void setInputGain (float gain);
+    void setInputGain( float gain );
     float getInputGain() const;
 
-    void setOutputGain (float gain);
+    void setOutputGain( float gain );
     float getOutputGain() const;
 
-    void setAudioInputEnabled (bool enabled);
+    void setAudioInputEnabled( bool enabled );
     bool isAudioInputEnabled() const;
 
-    void setMidiInputEnabled (bool enabled);
+    void setMidiInputEnabled( bool enabled );
     bool isMidiInputEnabled() const;
 
     //==============================================================================
     // Web server settings
 
-    void setWebServerPort (int port);
+    void setWebServerPort( int port );
     int getWebServerPort() const;
 
-    void setWebServerAutoStart (bool autoStart);
+    void setWebServerAutoStart( bool autoStart );
     bool shouldWebServerAutoStart() const;
 
     //==============================================================================
@@ -81,12 +81,12 @@ private:
     ConfigurationManager();
 
     juce::File getSettingsFile() const;
-    void loadFromXml (const juce::XmlElement& xml);
+    void loadFromXml( const juce::XmlElement& xml );
     std::unique_ptr<juce::XmlElement> saveToXml() const;
 
     //==============================================================================
     // Settings data
-    juce::Rectangle<int> windowBounds { 100, 100, 700, 600 };
+    juce::Rectangle<int> windowBounds{ 100, 100, 700, 600 };
     juce::String lastPluginPath;
     juce::String lastPluginDirectory;
 
@@ -100,5 +100,5 @@ private:
 
     bool settingsLoaded = false;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ConfigurationManager)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR( ConfigurationManager )
 };
