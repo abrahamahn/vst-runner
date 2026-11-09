@@ -41,9 +41,13 @@ jobs:
           build-essential
 
     - name: Configure CMake
+      env:
+        CXXFLAGS: "-I/usr/include/freetype2"
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_TESTS=ON
 
     - name: Build
+      env:
+        CXXFLAGS: "-I/usr/include/freetype2"
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
     - name: Run Tests

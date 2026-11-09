@@ -85,9 +85,9 @@ private:
             double avgTime = duration.count() / iterations;
             double throughput = ( bufferSize * numChannels * iterations ) / ( duration.count() / 1000.0 );
 
-            std::cout << "  Buffer size: " << std::setw( 4 ) << bufferSize << " | Avg time: " << std::fixed
-                      << std::setprecision( 4 ) << avgTime << " ms"
-                      << " | Throughput: " << std::setprecision( 2 ) << ( throughput / 1000000.0 )
+            std::cout << "  Buffer size: " << std::setw( 4 ) << bufferSize;
+            std::cout << " | Avg time: " << std::fixed << std::setprecision( 4 ) << avgTime << " ms";
+            std::cout << " | Throughput: " << std::setprecision( 2 ) << ( throughput / 1000000.0 )
                       << " M samples/sec\n";
         }
 
